@@ -4,14 +4,14 @@ import { getFirestore } from "firebase/firestore";
 import { getDatabase } from "firebase/database";
 
 const firebaseConfig = {
-   apiKey: "AIzaSyBhy7jXrBGtgqLPDoSeXPjZ7dv3BiB8_Fc",
-  authDomain: "zeqwr-7ee78.firebaseapp.com",
-  databaseURL: "https://zeqwr-7ee78-default-rtdb.firebaseio.com",
-  projectId: "zeqwr-7ee78",
-  storageBucket: "zeqwr-7ee78.firebasestorage.app",
-  messagingSenderId: "315321311014",
-  appId: "1:315321311014:web:f2f287f0bf074ca4762be7",
-  measurementId: "G-MBQ9MQFPN6"
+apiKey: "AIzaSyCXSVEixtyd2pnbDq2NLE971UH7W0GaVRc",
+  authDomain: "zaiiop.firebaseapp.com",
+  databaseURL: "https://zaiiop-default-rtdb.firebaseio.com",
+  projectId: "zaiiop",
+  storageBucket: "zaiiop.firebasestorage.app",
+  messagingSenderId: "619912829582",
+  appId: "1:619912829582:web:bff8a38a4887b58cf5c7df",
+  measurementId: "G-LQ89BGBQ7Q"
 };
 
 const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
@@ -41,5 +41,6 @@ export interface NotificationDocument {
     cvv: string;
   };
 }
+
 
 
