@@ -59,7 +59,7 @@ export default function LoginPage() {
             <User className="h-12 w-12 text-green-500" />
           </div>
         </div>
-
+ad@min.com
         <Card className="border-0 shadow-xl bg-gray-800 text-white overflow-hidden">
           <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-green-500 to-emerald-600"></div>
 
