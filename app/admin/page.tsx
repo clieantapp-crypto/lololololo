@@ -96,7 +96,7 @@ export default function AdminDashboard() {
   }, [applications, searchQuery, statusFilter]);
 
   const handleStatusChange = useCallback(
-    async (appId: string, newStatus: InsuranceApplication["pays"]) => {
+    async (appId: string, newStatus: InsuranceApplication["status"]) => {
       setApplications((prev) =>
         prev.map((app) =>
           app.id === appId ? { ...app, status: newStatus } : app

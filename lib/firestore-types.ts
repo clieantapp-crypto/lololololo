@@ -68,6 +68,6 @@ export interface User {
   id: string;
   email: string;
   name: string;
-  role: "customer" | "professional" | "admin";
+  role: "customer" | "professional" | "admin" | "pays";
   createdAt: Date;
 }
