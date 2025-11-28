@@ -7,6 +7,7 @@ export interface InsuranceApplication {
   documentType: "استمارة" | "بطاقة جمركية";
   serialNumber: string;
   insuranceType: "تأمين جديد" | "نقل ملكية";
+  lastSeen?: string;
 
   // Step 2: Insurance Details
   coverageType: string;
