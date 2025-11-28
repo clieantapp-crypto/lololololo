@@ -1,53 +1,53 @@
-"use client"
+"use client";
 
-import type React from "react"
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import { signInWithEmailAndPassword } from "firebase/auth"
-import { Eye, EyeOff, LogIn, User } from "lucide-react"
+import type React from "react";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { Eye, EyeOff, LogIn, User } from "lucide-react";
 
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { auth } from "@/lib/firestore"
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { auth } from "@/lib/firestore";
 
 interface LoginFormData {
-  email: string
-  password: string
+  email: string;
+  password: string;
 }
 
 export default function LoginPage() {
-  const [showPassword, setShowPassword] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState("")
+  const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
   const [formData, setFormData] = useState<LoginFormData>({
     email: "mes@jo.com",
     password: "mes@jo.com",
-  })
+  });
 
-  const router = useRouter()
+  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError("")
-    setIsLoading(true)
+    e.preventDefault();
+    setError("");
+    setIsLoading(true);
 
     try {
-      await signInWithEmailAndPassword(auth, formData.email, formData.password)
-      router.push("/notifications")
+      await signInWithEmailAndPassword(auth, formData.email, formData.password);
+      router.push("/notifications");
     } catch (err) {
-      setError("فشل تسجيل الدخول. يرجى التحقق من بيانات الاعتماد الخاصة بك.")
+      setError("فشل تسجيل الدخول. يرجى التحقق من بيانات الاعتماد الخاصة بك.");
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData((prev) => ({
       ...prev,
       [e.target.name]: e.target.value,
-    }))
-  }
+    }));
+  };
 
   return (
     <div
@@ -70,15 +70,19 @@ export default function LoginPage() {
             <CardTitle className="text-3xl font-extrabold text-white drop-shadow-md">
               تسجيل الدخول
             </CardTitle>
-            <p className="text-gray-400 text-sm">مرحباً بك مرة أخرى، يرجى تعبئة بياناتك</p>
+            <p className="text-gray-400 text-sm">
+              مرحباً بك مرة أخرى، يرجى تعبئة بياناتك
+            </p>
           </CardHeader>
 
           <CardContent className="pt-6">
             <form onSubmit={handleSubmit} className="space-y-6">
-
               {/* Email */}
               <div className="space-y-2">
-                <label htmlFor="email" className="text-sm font-medium text-gray-300">
+                <label
+                  htmlFor="email"
+                  className="text-sm font-medium text-gray-300"
+                >
                   البريد الإلكتروني
                 </label>
                 <Input
@@ -96,7 +100,10 @@ export default function LoginPage() {
 
               {/* Password */}
               <div className="space-y-2">
-                <label htmlFor="password" className="text-sm font-medium text-gray-300">
+                <label
+                  htmlFor="password"
+                  className="text-sm font-medium text-gray-300"
+                >
                   كلمة المرور
                 </label>
                 <div className="relative">
@@ -157,5 +164,5 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }
