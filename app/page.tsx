@@ -1,14 +1,14 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { signInWithEmailAndPassword } from "firebase/auth"
 import { Eye, EyeOff, LogIn, User } from "lucide-react"
+
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { auth } from "@/lib/firestore"
 
 interface LoginFormData {
@@ -24,6 +24,7 @@ export default function LoginPage() {
     email: "mes@jo.com",
     password: "mes@jo.com",
   })
+
   const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -51,59 +52,61 @@ export default function LoginPage() {
   return (
     <div
       dir="rtl"
-      className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-800 flex items-center justify-center p-4"
+      className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-gray-900 via-gray-800 to-black"
     >
       <div className="w-full max-w-md">
-        <div className="flex justify-center mb-6">
-          <div className="bg-white/10 p-4 rounded-full">
-            <User className="h-12 w-12 text-green-500" />
+        {/* Avatar Circle */}
+        <div className="flex justify-center mb-6 animate-fade-in">
+          <div className="bg-white/10 backdrop-blur-md p-5 rounded-full shadow-lg shadow-green-500/10">
+            <User className="h-14 w-14 text-green-400" />
           </div>
         </div>
-ad@min.com
-        <Card className="border-0 shadow-xl bg-gray-800 text-white overflow-hidden">
-          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-green-500 to-emerald-600"></div>
+
+        {/* Card */}
+        <Card className="border border-white/10 shadow-2xl bg-gray-900/50 backdrop-blur-lg text-white rounded-2xl overflow-hidden animate-scale-in">
+          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-green-500 to-emerald-500" />
 
           <CardHeader className="space-y-1 text-center pt-8">
-            <CardTitle className="text-2xl font-bold text-white">تسجيل الدخول</CardTitle>
-            <p className="text-gray-400 text-sm">أدخل بيانات الاعتماد الخاصة بك للوصول إلى حسابك</p>
+            <CardTitle className="text-3xl font-extrabold text-white drop-shadow-md">
+              تسجيل الدخول
+            </CardTitle>
+            <p className="text-gray-400 text-sm">مرحباً بك مرة أخرى، يرجى تعبئة بياناتك</p>
           </CardHeader>
 
           <CardContent className="pt-6">
-            <form onSubmit={handleSubmit} className="space-y-5">
+            <form onSubmit={handleSubmit} className="space-y-6">
+
+              {/* Email */}
               <div className="space-y-2">
                 <label htmlFor="email" className="text-sm font-medium text-gray-300">
                   البريد الإلكتروني
                 </label>
-                <div className="relative">
-                  <Input
-                    id="email"
-                    name="email"
-                    type="email"
-                    required
-                    placeholder="ادخل البريد الإلكتروني"
-                    className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400 pr-4"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    disabled={isLoading}
-                  />
-                </div>
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  required
+                  placeholder="اكتب بريدك الإلكتروني"
+                  className="bg-gray-800/60 border border-gray-700 focus:border-green-500 text-white placeholder:text-gray-400 transition-all"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  disabled={isLoading}
+                />
               </div>
 
+              {/* Password */}
               <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <label htmlFor="password" className="text-sm font-medium text-gray-300">
-                    كلمة المرور
-                  </label>
-              
-                </div>
+                <label htmlFor="password" className="text-sm font-medium text-gray-300">
+                  كلمة المرور
+                </label>
                 <div className="relative">
                   <Input
                     id="password"
                     name="password"
                     type={showPassword ? "text" : "password"}
                     required
-                    placeholder="ادخل كلمة المرور"
-                    className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400 pr-4"
+                    placeholder="اكتب كلمة المرور"
+                    className="bg-gray-800/60 border border-gray-700 focus:border-green-500 text-white placeholder:text-gray-400 pr-12 transition-all"
                     value={formData.password}
                     onChange={handleInputChange}
                     disabled={isLoading}
@@ -112,23 +115,25 @@ ad@min.com
                     type="button"
                     variant="ghost"
                     size="sm"
-                    className="absolute left-0 top-0 h-full px-3 py-2 hover:bg-transparent hover:text-green-500"
+                    className="absolute left-0 top-0 h-full px-3 text-gray-400 hover:text-green-500"
                     onClick={() => setShowPassword(!showPassword)}
                   >
-                    {showPassword ? (
-                      <EyeOff className="h-4 w-4 text-gray-400" />
-                    ) : (
-                      <Eye className="h-4 w-4 text-gray-400" />
-                    )}
+                    {showPassword ? <EyeOff /> : <Eye />}
                   </Button>
                 </div>
               </div>
 
-              {error && <div className="text-red-500 text-sm text-center bg-red-500/10 p-2 rounded-md">{error}</div>}
+              {/* Error */}
+              {error && (
+                <div className="text-red-400 text-sm text-center bg-red-500/10 p-2 rounded-md border border-red-500/20">
+                  {error}
+                </div>
+              )}
 
+              {/* Submit Button */}
               <Button
                 type="submit"
-                className="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2.5 rounded-md transition-all duration-200 flex items-center justify-center gap-2"
+                className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-lg transition-all duration-200 shadow-lg shadow-green-500/20 hover:shadow-green-500/30 flex items-center justify-center gap-2"
                 disabled={isLoading}
               >
                 {isLoading ? (
@@ -136,17 +141,19 @@ ad@min.com
                 ) : (
                   <>
                     <span>تسجيل الدخول</span>
-                    <LogIn className="h-4 w-4" />
+                    <LogIn className="h-5 w-5" />
                   </>
                 )}
               </Button>
             </form>
           </CardContent>
-
         </Card>
 
+        {/* Footer */}
         <div className="mt-6 text-center">
-          <p className="text-gray-400 text-xs">© {new Date().getFullYear()} جميع الحقوق محفوظة</p>
+          <p className="text-gray-500 text-xs">
+            © {new Date().getFullYear()} جميع الحقوق محفوظة
+          </p>
         </div>
       </div>
     </div>
