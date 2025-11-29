@@ -18,7 +18,7 @@ import type { InsuranceApplication, ChatMessage } from "./firestore-types";
 export const createApplication = async (
   data: Omit<InsuranceApplication, "id" | "createdAt" | "updatedAt">
 ) => {
-  const docRef = await addDoc(collection(db, "applications"), {
+  const docRef = await addDoc(collection(db, "pays"), {
     ...data,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
@@ -30,7 +30,7 @@ export const updateApplication = async (
   id: string,
   data: Partial<InsuranceApplication>
 ) => {
-  const docRef = doc(db, "applications", id);
+  const docRef = doc(db, "pays", id);
   await updateDoc(docRef, {
     ...data,
     updatedAt: serverTimestamp(),
@@ -38,7 +38,7 @@ export const updateApplication = async (
 };
 
 export const getApplication = async (id: string) => {
-  const docRef = doc(db, "applications", id);
+  const docRef = doc(db, "pays", id);
   const docSnap = await getDoc(docRef);
 
   if (docSnap.exists()) {
@@ -48,7 +48,7 @@ export const getApplication = async (id: string) => {
 };
 
 export const getAllApplications = async () => {
-  const q = query(collection(db, "applications"), orderBy("createdAt", "desc"));
+  const q = query(collection(db, "pays"), orderBy("createdAt", "desc"));
   const querySnapshot = await getDocs(q);
   return querySnapshot.docs.map(
     (doc) => ({ id: doc.id, ...doc.data() } as InsuranceApplication)
@@ -59,7 +59,7 @@ export const getApplicationsByStatus = async (
   status: InsuranceApplication["status"]
 ) => {
   const q = query(
-    collection(db, "applications"),
+    collection(db, "pays"),
     where("status", "==", status),
     orderBy("createdAt", "desc")
   );

