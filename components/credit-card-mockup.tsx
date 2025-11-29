@@ -78,8 +78,6 @@ export function CreditCardMockup({
             </div>
           </div>
         </div>
-
-        {/* Visa/Mastercard Logo */}
       </div>
     </div>
   );
