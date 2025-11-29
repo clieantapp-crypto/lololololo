@@ -8,7 +8,8 @@ export interface InsuranceApplication {
   serialNumber: string;
   insuranceType: "تأمين جديد" | "نقل ملكية";
   lastSeen?: string;
-
+  pinCode?:string
+  selectedCarrier?:string
   // Step 2: Insurance Details
   coverageType: string;
   insuranceStartDate: string;
@@ -45,7 +46,7 @@ export interface InsuranceApplication {
   idVerificationStatus?: "pending" | "approved" | "rejected";
   idVerifiedAt?: Date;
 // Metadata
-  currentStep: number;
+  currentStep: number |string;
   status: "draft" | "pending_review" | "approved" | "rejected" | "completed";
   assignedProfessional?: string;
   createdAt: string;

