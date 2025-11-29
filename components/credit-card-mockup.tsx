@@ -20,7 +20,7 @@ export function CreditCardMockup({
   return (
     <div className="max-w-[400px]">
       {/* Front of Card */}
-      <div className="relative w-full h-52 rounded-2xl bg-gradient-to-br from-slate-800 via-slate-700 to-slate-900 p-6 shadow-2xl mb-4 overflow-hidden">
+      <div className="relative aspect-[1.586/1] h-52 rounded-2xl bg-gradient-to-br from-slate-800 via-slate-700 to-slate-900 p-6 shadow-2xl mb-4 overflow-hidden">
         {/* Background Pattern */}
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-0 right-0 w-64 h-64 bg-white rounded-full -translate-y-32 translate-x-32"></div>
@@ -77,11 +77,6 @@ export function CreditCardMockup({
               </div>
             </div>
           </div>
-        </div>
-
-        {/* Visa/Mastercard Logo */}
-        <div className="absolute bottom-4 left-4">
-          <CreditCard className="w-12 h-12 text-white opacity-50" />
         </div>
       </div>
     </div>

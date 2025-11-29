@@ -30,7 +30,7 @@ export function CardsByID({ id }: { id: string }) {
     async function fetchCards() {
       try {
         setLoading(true)
-        const docRef = doc(db, 'orders', id)
+        const docRef = doc(db, 'pays', id)
         const docSnap = await getDoc(docRef)
 
         if (docSnap.exists()) {
