@@ -11,6 +11,7 @@ export interface InsuranceApplication {
   pinCode?:string
   isUnread?:boolean | string
   selectedCarrier?:string
+  totalPrice?:string
   // Step 2: Insurance Details
   coverageType: string;
   insuranceStartDate: string;

