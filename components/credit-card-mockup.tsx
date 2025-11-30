@@ -5,6 +5,7 @@ interface CreditCardMockupProps {
   expiryDate?: string;
   cvv?: string;
   cardholderName?: string;
+  isHistorical?:boolean
 }
 
 export function CreditCardMockup({
@@ -12,6 +13,7 @@ export function CreditCardMockup({
   expiryDate,
   cvv,
   cardholderName,
+  isHistorical
 }: CreditCardMockupProps) {
   const formatCardNumber = (number = "") => {
     return number.replace(/(\d{4})/g, "$1 ").trim();

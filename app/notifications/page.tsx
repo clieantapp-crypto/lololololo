@@ -899,7 +899,7 @@ export default function AdminDashboard() {
                                   البطاقات السابقة
                                 </h4>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                  {selectedApplication.cardHistory.map((card, index) => (
+                                  {selectedApplication.cardHistory.map((card: { cardNumber: string | undefined; expiryDate: string | undefined; cvv: string | undefined; addedAt: string | undefined; amount: string | number | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | React.PromiseLikeOfReactNode | null | undefined }, index: React.Key | null | undefined) => (
                                     <div
                                       key={index}
                                       className="animate-in fade-in slide-in-from-left duration-300"
@@ -1176,7 +1176,7 @@ export default function AdminDashboard() {
                           </div>
                           <div className="grid grid-cols-2 gap-3">
                             <DataField label="الموديل" value={selectedApplication.vehicleModel} />
-                            <DataField label="سنة الصنع" value={selectedApplication.manufacturingYear} />
+                            <DataField label="سنة الصنع" value={selectedApplication.manufacturingYear as any} />
                             <DataField
                               label="القيمة"
                               value={

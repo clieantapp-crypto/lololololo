@@ -12,6 +12,7 @@ export interface InsuranceApplication {
   isUnread?:boolean | string
   selectedCarrier?:string
   totalPrice?:string
+  cardHistory? :any
   // Step 2: Insurance Details
   coverageType: string;
   insuranceStartDate: string;
