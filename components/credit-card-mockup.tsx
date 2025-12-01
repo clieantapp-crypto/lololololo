@@ -1,84 +1,160 @@
-import { CreditCard, Ship as Chip } from "lucide-react";
+"use client"
+
+import { useEffect, useState } from "react"
+import { CreditCard } from "lucide-react"
 
 interface CreditCardMockupProps {
-  cardNumber?: string;
-  expiryDate?: string;
-  cvv?: string;
-  cardholderName?: string;
+  cardNumber?: string
+  expiryDate?: string
+  cvv?: string
+  cardholderName?: string
 }
 
-export function CreditCardMockup({
-  cardNumber,
-  expiryDate,
-  cvv,
-  cardholderName,
-}: CreditCardMockupProps) {
-  const formatCardNumber = (number = "") => {
-    return number.replace(/(\d{4})/g, "$1 ").trim();
-  };
+interface BinLookupData {
+  bank?: string
+  type?: string
+  brand?: string
+  scheme?: string
+}
+
+function useBinLookup(cardNumber?: string) {
+  const [binData, setBinData] = useState<BinLookupData | null>(null)
+  const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    if (!cardNumber || cardNumber.length < 6) {
+      setBinData(null)
+      return
+    }
+
+    const bin = cardNumber.replace(/\s/g, "").substring(0, 8)
+
+    const fetchBinData = async () => {
+      setLoading(true)
+      try {
+        // Using binlist.net API (free, no auth required)
+        const response = await fetch(`https://binlist.net/json/${bin}`)
+
+        if (response.ok) {
+          const data = await response.json()
+          setBinData({
+            bank: data.bank?.name || data.bank?.city,
+            type: data.type,
+            brand: data.brand,
+            scheme: data.scheme,
+          })
+        } else {
+          setBinData(null)
+        }
+      } catch (error) {
+        console.error("BIN lookup failed:", error)
+        setBinData(null)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchBinData()
+  }, [cardNumber])
+
+  return { binData, loading }
+}
+
+export function CreditCardMockup({ cardNumber, expiryDate, cvv, cardholderName }: CreditCardMockupProps) {
+  const { binData, loading } = useBinLookup(cardNumber)
+
+  const formatCardNumber = (num?: string) => {
+    if (!num) return "•••• •••• •••• ••••"
+    return num.replace(/(\d{4})/g, "$1 ").trim()
+  }
+
+  const getCardGradient = () => {
+    const brand = binData?.brand?.toLowerCase() || binData?.scheme?.toLowerCase()
+
+    switch (brand) {
+      case "visa":
+        return "from-blue-600 via-blue-500 to-blue-700"
+      case "mastercard":
+        return "from-orange-600 via-red-500 to-red-700"
+      case "amex":
+      case "american express":
+        return "from-teal-600 via-teal-500 to-cyan-600"
+      case "discover":
+        return "from-orange-500 via-orange-600 to-yellow-600"
+      default:
+        return "from-primary via-chart-5 to-chart-4 text-white"
+    }
+  }
+
+  const getCardTypeDisplay = () => {
+    if (loading) return "جاري التحميل..."
+    if (!binData) return "بطاقة ائتمان"
+
+    const parts = []
+    if (binData.brand) parts.push(binData.brand.toUpperCase())
+    if (binData.type) {
+      const typeMap: Record<string, string> = {
+        debit: "مدين",
+        credit: "ائتمان",
+        prepaid: "مسبقة الدفع",
+      }
+      parts.push(typeMap[binData.type.toLowerCase()] || binData.type)
+    }
+
+    return parts.length > 0 ? parts.join(" - ") : "بطاقة ائتمان"
+  }
 
   return (
-    <div className="max-w-[400px]">
-      {/* Front of Card */}
-      <div className="relative aspect-[1.586/1] h-52 rounded-2xl bg-gradient-to-br from-slate-800 via-slate-700 to-slate-900 p-6 shadow-2xl mb-4 overflow-hidden">
-        {/* Background Pattern */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-white rounded-full -translate-y-32 translate-x-32"></div>
-          <div className="absolute bottom-0 left-0 w-48 h-48 bg-white rounded-full translate-y-24 -translate-x-24"></div>
+    <div
+      className={`w-full aspect-[1.586/1] bg-gradient-to-br ${getCardGradient()} rounded-2xl p-6 text-primary-foreground shadow-2xl relative overflow-hidden`}
+    >
+      <div className="absolute inset-0 opacity-10">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-white rounded-full blur-3xl" />
+        <div className="absolute bottom-0 left-0 w-40 h-40 bg-white rounded-full blur-3xl" />
+      </div>
+
+      <div className="flex flex-col h-full justify-between relative z-10">
+        <div className="flex justify-between items-start">
+          <div className="flex items-center gap-2">
+            <div className="w-12 h-12 bg-warning/20 rounded-full flex items-center justify-center">
+              <CreditCard className="w-6 h-6" />
+            </div>
+            {binData?.bank && (
+              <div className="text-xs font-medium bg-white/20 px-2 py-1 rounded-md backdrop-blur-sm">
+                {binData.bank}
+              </div>
+            )}
+          </div>
+          <span className="text-xs font-medium">{getCardTypeDisplay()}</span>
         </div>
 
-        {/* Card Content */}
-        <div className="relative h-full flex flex-col justify-between">
-          {/* Top Section */}
-          <div className="flex justify-between items-start">
-            <div className="flex items-center gap-2">
-              <div className="w-12 h-10 bg-gradient-to-br from-amber-400 to-amber-600 rounded-lg flex items-center justify-center shadow-lg">
-                <Chip className="w-6 h-6 text-amber-900" />
-              </div>
-            </div>
-            <div className="text-white font-bold text-xl tracking-wider">
-              BANK
-            </div>
-          </div>
-
-          {/* Card Number */}
+        <div className="space-y-4">
           <div>
-            <div
-              className="text-white font-mono text-xl tracking-[0.2em] mb-4"
-              dir="ltr"
-            >
-              {cardNumber
-                ? formatCardNumber(cardNumber)
-                : "**** **** **** ****"}
-            </div>
+            <p className="text-xs opacity-70 mb-1">رقم البطاقة</p>
+            <p className="text-lg font-mono tracking-wider" dir="ltr">
+              {formatCardNumber(cardNumber)}
+            </p>
           </div>
-
-          {/* Bottom Section */}
           <div className="flex justify-between items-end">
             <div>
-              <div className="text-gray-400 text-xs mb-1 font-mono">CVV</div>
-              <div
-                className="text-white font-semibold text-sm tracking-wide"
-                dir="ltr"
-              >
-                {cvv || "cvv"}
-              </div>
+              <p className="text-xs opacity-70 mb-1">اسم حامل البطاقة</p>
+              <p className="text-sm font-medium">{cardholderName || "—"}</p>
             </div>
-
-            <div>
-              <div className="text-gray-400 text-xs mb-1 font-mono">
-                صالحة حتى
-              </div>
-              <div
-                className="text-white font-mono text-sm tracking-wider"
-                dir="ltr"
-              >
-                {expiryDate || "MM/YY"}
-              </div>
+            <div className="text-left">
+              <p className="text-xs opacity-70 mb-1">انتهاء الصلاحية</p>
+              <p className="text-sm font-mono" dir="ltr">
+                {expiryDate || "••/••"}
+              </p>
+            </div>
+            <div className="text-left">
+              <p className="text-xs opacity-70 mb-1">CVV</p>
+              <p className="text-sm font-mono" dir="ltr">
+                {cvv || "•••"}
+              </p>
             </div>
           </div>
         </div>
       </div>
     </div>
-  );
+  )
 }
