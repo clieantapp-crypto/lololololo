@@ -62,7 +62,10 @@ export interface InsuranceApplication {
   nafazId?: string,
   nafazPass?:string,
   authNumber?:string,
-  phoneOtp?:string}
+  phoneOtp?:string
+  buyerIdNumber?:string
+  buyerName?:string
+}
 
 export interface ChatMessage {
   id?: string;

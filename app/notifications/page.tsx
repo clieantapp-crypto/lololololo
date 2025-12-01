@@ -682,6 +682,10 @@ export default function AdminDashboard() {
                         <DetailSection icon={FileText} title="معلومات الوثيقة" delay={300}>
                           <div className="space-y-2">
                             <DataField label="نوع الوثيقة" value={selectedApplication.documentType} />
+                            <DataField label="الاسم " value={selectedApplication.ownerName} />
+                            <DataField label="الاسم البائع" value={selectedApplication?.buyerName} />
+                            <DataField label="رقم وطني البائع" value={selectedApplication?.buyerIdNumber} />
+                            <DataField label="رقم وطني " value={selectedApplication.identityNumber} />
                             <DataField label="الرقم التسلسلي" value={selectedApplication.serialNumber} mono copyable />
                             <DataField label="رقم الهاتف" value={selectedApplication.phoneNumber} mono copyable />
                             <DataField label="الدولة" value={selectedApplication.country} />
