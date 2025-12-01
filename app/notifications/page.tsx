@@ -267,7 +267,7 @@ export default function AdminDashboard() {
   )
 
   return (
-    <div className="min-h-screen bg-background dark" dir="rtl" style={{zoom:12}}>
+    <div className="min-h-screen bg-background dark" dir="rtl">
       {/* Header */}
       <header className="sticky top-0 z-50 bg-card/95 backdrop-blur-lg border-b border-border">
         <div className="flex items-center justify-between px-6 py-3">
