@@ -35,15 +35,15 @@ export function DataField({
   }
 
   const sizeClasses = {
-    sm: "p-1.5",
-    md: "p-2",
-    lg: "p-2.5",
+    sm: "p-1",
+    md: "p-1.5",
+    lg: "p-2",
   }
 
   const textSizeClasses = {
-    sm: "text-xs",
-    md: "text-sm",
-    lg: "text-base",
+    sm: "text-[10px]",
+    md: "text-[11px]",
+    lg: "text-xs",
   }
 
   const variantStyles = {
