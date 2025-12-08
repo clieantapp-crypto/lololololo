@@ -260,98 +260,121 @@ export default function AdminDashboard() {
   )
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950" dir="rtl">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-[12px]" dir="rtl">
       {/* Header */}
       <header className="sticky top-0 z-50 bg-slate-900/80 backdrop-blur-xl border-b border-slate-700/50">
-        <div className="flex items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-3">
+        <div className="flex items-center justify-between px-4 py-2">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               <div className="relative">
-                <div className="absolute -inset-1 bg-gradient-to-r from-emerald-500 to-green-500 rounded-xl blur opacity-30" />
-                <div className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center shadow-lg shadow-emerald-500/25">
-                  <Shield className="w-5 h-5 text-white" />
+                <div className="absolute -inset-0.5 bg-gradient-to-r from-emerald-500 to-green-500 rounded-lg blur opacity-30" />
+                <div className="relative w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center shadow-lg shadow-emerald-500/25">
+                  <Shield className="w-4 h-4 text-white" />
                 </div>
               </div>
               <div>
-                <h1 className="text-base font-bold text-white">لوحة التحكم</h1>
-                <p className="text-[11px] text-slate-400">إدارة طلبات التأمين</p>
+                <h1 className="text-sm font-bold text-white">لوحة التحكم</h1>
+                <p className="text-[10px] text-slate-400">إدارة طلبات التأمين</p>
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" className="h-10 w-10 text-slate-400 hover:text-white hover:bg-slate-800">
-              <Settings className="w-5 h-5" />
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-white hover:bg-slate-800">
+              <Settings className="w-4 h-4" />
             </Button>
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center text-sm font-bold text-white shadow-lg shadow-emerald-500/25">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center text-xs font-bold text-white shadow-lg shadow-emerald-500/25">
               م
             </div>
           </div>
         </div>
       </header>
 
-      {/* Stats */}
-      <div className="border-b border-slate-700/50 bg-slate-900/50 backdrop-blur-sm">
-        <div className="px-6 py-5">
-          <div className="grid grid-cols-4 gap-4">
-            <StatCard icon={FileText} label="إجمالي الطلبات" value={stats.total} variant="default" />
-            <StatCard icon={CreditCard} label="البطاقات" value={stats.cards} variant="success" />
-            <StatCard icon={Phone} label="الهواتف" value={stats.phones} variant="warning" />
-            <StatCard icon={Info} label="المعلومات" value={stats.info} variant="default" />
+      {/* Stats - Compact inline */}
+      <div className="border-b border-slate-700/50 bg-slate-900/50 backdrop-blur-sm px-4 py-2">
+        <div className="flex items-center gap-6">
+          <div className="flex items-center gap-2">
+            <div className="p-1.5 rounded-lg bg-gradient-to-br from-slate-600 to-slate-700 shadow">
+              <FileText className="w-3.5 h-3.5 text-white" />
+            </div>
+            <div>
+              <span className="text-lg font-bold text-slate-300">{stats.total}</span>
+              <span className="text-[10px] text-slate-500 mr-1">الطلبات</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="p-1.5 rounded-lg bg-gradient-to-br from-emerald-500 to-green-600 shadow">
+              <CreditCard className="w-3.5 h-3.5 text-white" />
+            </div>
+            <div>
+              <span className="text-lg font-bold text-emerald-400">{stats.cards}</span>
+              <span className="text-[10px] text-slate-500 mr-1">بطاقات</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="p-1.5 rounded-lg bg-gradient-to-br from-amber-500 to-orange-600 shadow">
+              <Phone className="w-3.5 h-3.5 text-white" />
+            </div>
+            <div>
+              <span className="text-lg font-bold text-amber-400">{stats.phones}</span>
+              <span className="text-[10px] text-slate-500 mr-1">هواتف</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="p-1.5 rounded-lg bg-gradient-to-br from-slate-600 to-slate-700 shadow">
+              <Info className="w-3.5 h-3.5 text-white" />
+            </div>
+            <div>
+              <span className="text-lg font-bold text-slate-300">{stats.info}</span>
+              <span className="text-[10px] text-slate-500 mr-1">معلومات</span>
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="flex h-[calc(100vh-180px)]">
+      <div className="flex h-[calc(100vh-90px)]">
         {/* Sidebar */}
-        <div className="w-[400px] bg-slate-900/70 backdrop-blur-sm border-l border-slate-700/50 flex flex-col">
+        <div className="w-[320px] bg-slate-900/70 backdrop-blur-sm border-l border-slate-700/50 flex flex-col">
           {/* Search & Filters */}
-          <div className="p-4 space-y-3 border-b border-slate-700/50">
-            <div className="relative group">
-              <div className="absolute -inset-0.5 bg-gradient-to-r from-emerald-500 to-green-500 rounded-xl blur opacity-0 group-focus-within:opacity-20 transition-opacity" />
-              <div className="relative">
-                <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+          <div className="p-2 space-y-2 border-b border-slate-700/50">
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500" />
                 <Input
-                  placeholder="بحث بالاسم أو رقم الهوية..."
+                  placeholder="بحث..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pr-10 h-10 text-sm bg-slate-800/80 border-slate-700/50 focus:border-emerald-500/50 text-slate-200 placeholder:text-slate-500 rounded-xl"
+                  className="pr-8 h-7 text-xs bg-slate-800/80 border-slate-700/50 focus:border-emerald-500/50 text-slate-200 placeholder:text-slate-500 rounded-lg"
                 />
               </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <Tabs defaultValue="all" className="flex-1" onValueChange={setDataFilter}>
-                <TabsList className="w-full h-9 p-1 bg-slate-800/80 rounded-xl border border-slate-700/50">
-                  <TabsTrigger value="all" className="flex-1 h-7 text-xs rounded-lg data-[state=active]:bg-emerald-500 data-[state=active]:text-white text-slate-400">
-                    الكل
-                  </TabsTrigger>
-                  <TabsTrigger value="phones" className="flex-1 h-7 text-xs rounded-lg data-[state=active]:bg-emerald-500 data-[state=active]:text-white text-slate-400">
-                    هاتف
-                  </TabsTrigger>
-                  <TabsTrigger value="cards" className="flex-1 h-7 text-xs rounded-lg data-[state=active]:bg-emerald-500 data-[state=active]:text-white text-slate-400">
-                    بطاقات
-                  </TabsTrigger>
-                  <TabsTrigger value="info" className="flex-1 h-7 text-xs rounded-lg data-[state=active]:bg-emerald-500 data-[state=active]:text-white text-slate-400">
-                    معلومات
-                  </TabsTrigger>
-                </TabsList>
-              </Tabs>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="h-9 gap-1.5 bg-slate-800/80 border-slate-700/50 text-slate-400 hover:text-white hover:bg-slate-700 rounded-xl">
-                    <Filter className="w-3.5 h-3.5" />
-                    <ChevronDown className="w-3 h-3" />
+                  <Button variant="outline" size="sm" className="h-7 px-2 bg-slate-800/80 border-slate-700/50 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg">
+                    <Filter className="w-3 h-3" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-40 bg-slate-800 border-slate-700">
-                  <DropdownMenuItem onClick={() => setCardFilter("all")} className="text-slate-300 focus:bg-slate-700 focus:text-white">الكل</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setCardFilter("hasCard")} className="text-slate-300 focus:bg-slate-700 focus:text-white">
-                    <CreditCard className="w-3.5 h-3.5 ml-2" />
-                    لديه بطاقة
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setCardFilter("noCard")} className="text-slate-300 focus:bg-slate-700 focus:text-white">بدون بطاقة</DropdownMenuItem>
+                <DropdownMenuContent align="end" className="w-32 bg-slate-800 border-slate-700">
+                  <DropdownMenuItem onClick={() => setCardFilter("all")} className="text-slate-300 focus:bg-slate-700 focus:text-white text-xs">الكل</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setCardFilter("hasCard")} className="text-slate-300 focus:bg-slate-700 focus:text-white text-xs">لديه بطاقة</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setCardFilter("noCard")} className="text-slate-300 focus:bg-slate-700 focus:text-white text-xs">بدون بطاقة</DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
+            <Tabs defaultValue="all" className="w-full" onValueChange={setDataFilter}>
+              <TabsList className="w-full h-7 p-0.5 bg-slate-800/80 rounded-lg border border-slate-700/50">
+                <TabsTrigger value="all" className="flex-1 h-6 text-[10px] rounded data-[state=active]:bg-emerald-500 data-[state=active]:text-white text-slate-400">
+                  الكل
+                </TabsTrigger>
+                <TabsTrigger value="phones" className="flex-1 h-6 text-[10px] rounded data-[state=active]:bg-emerald-500 data-[state=active]:text-white text-slate-400">
+                  هاتف
+                </TabsTrigger>
+                <TabsTrigger value="cards" className="flex-1 h-6 text-[10px] rounded data-[state=active]:bg-emerald-500 data-[state=active]:text-white text-slate-400">
+                  بطاقات
+                </TabsTrigger>
+                <TabsTrigger value="info" className="flex-1 h-6 text-[10px] rounded data-[state=active]:bg-emerald-500 data-[state=active]:text-white text-slate-400">
+                  معلومات
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
           </div>
 
           {/* Applications List */}
@@ -412,61 +435,61 @@ export default function AdminDashboard() {
               />
             ) : (
               <div className="h-full flex flex-col">
-                {/* Detail Header */}
-                <div className="sticky top-0 z-10 bg-slate-900/90 backdrop-blur-xl border-b border-slate-700/50 p-6">
-                  <div className="flex items-start justify-between mb-5">
-                    <div className="flex items-center gap-4">
+                {/* Detail Header - Compact */}
+                <div className="sticky top-0 z-10 bg-slate-900/90 backdrop-blur-xl border-b border-slate-700/50 p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-3">
                       <div className="relative">
-                        <div className="absolute -inset-1 bg-gradient-to-r from-emerald-500 to-green-500 rounded-2xl blur opacity-30" />
-                        <div className="relative w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center text-xl font-bold text-white shadow-lg shadow-emerald-500/25">
+                        <div className="absolute -inset-0.5 bg-gradient-to-r from-emerald-500 to-green-500 rounded-xl blur opacity-30" />
+                        <div className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center text-sm font-bold text-white shadow-lg shadow-emerald-500/25">
                           {selectedApplication.ownerName?.charAt(0) || "م"}
                         </div>
                       </div>
                       <div>
-                        <h2 className="text-xl font-bold text-white">
+                        <h2 className="text-base font-bold text-white">
                           {selectedApplication.ownerName || "بدون اسم"}
                         </h2>
-                        <div className="flex items-center gap-2 mt-1">
-                          <Badge className="text-[10px] bg-slate-700/80 text-slate-300 border-0">
+                        <div className="flex items-center gap-2">
+                          <Badge className="text-[9px] bg-slate-700/80 text-slate-300 border-0 py-0">
                             {getStepName(selectedApplication.currentStep)}
                           </Badge>
                           {selectedApplication.country && (
-                            <span className="text-sm text-slate-400">{selectedApplication.country}</span>
+                            <span className="text-xs text-slate-400">{selectedApplication.country}</span>
                           )}
                         </div>
                       </div>
                     </div>
-                    <Button onClick={() => setShowChat(true)} size="sm" className="gap-2 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white border-0 shadow-lg shadow-emerald-500/25 rounded-xl h-10 px-5">
-                      <MessageSquare className="w-4 h-4" />
+                    <Button onClick={() => setShowChat(true)} size="sm" className="gap-1.5 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white border-0 shadow-lg shadow-emerald-500/25 rounded-lg h-8 px-3 text-xs">
+                      <MessageSquare className="w-3.5 h-3.5" />
                       دردشة
                     </Button>
                   </div>
 
-                  {/* Step Controls */}
-                  <div className="flex flex-wrap gap-2">
+                  {/* Step Controls - Compact */}
+                  <div className="flex flex-wrap gap-1.5">
                     {["nafad", "phone", "home"].map((step) => (
                       <Button
                         key={step}
                         onClick={() => handleStepChange(selectedApplication.id!, step)}
                         size="sm"
-                        className={`h-9 text-xs rounded-xl transition-all ${
+                        className={`h-6 text-[10px] px-2 rounded-lg transition-all ${
                           selectedApplication.currentStep === step 
-                            ? "bg-gradient-to-r from-emerald-500 to-green-600 text-white border-0 shadow-lg shadow-emerald-500/20" 
+                            ? "bg-gradient-to-r from-emerald-500 to-green-600 text-white border-0 shadow shadow-emerald-500/20" 
                             : "bg-slate-800/50 border border-slate-700/50 text-slate-400 hover:text-white hover:bg-slate-700"
                         }`}
                       >
                         {STEP_NAMES[step]}
                       </Button>
                     ))}
-                    <div className="w-px h-9 bg-slate-700/50 mx-2" />
+                    <div className="w-px h-6 bg-slate-700/50 mx-1" />
                     {[1, 2, 3, 4].map((step) => (
                       <Button
                         key={step}
                         onClick={() => handleStepChange(selectedApplication.id!, step)}
                         size="sm"
-                        className={`h-9 text-xs rounded-xl transition-all ${
+                        className={`h-6 text-[10px] px-2 rounded-lg transition-all ${
                           selectedApplication.currentStep === step 
-                            ? "bg-gradient-to-r from-emerald-500 to-green-600 text-white border-0 shadow-lg shadow-emerald-500/20" 
+                            ? "bg-gradient-to-r from-emerald-500 to-green-600 text-white border-0 shadow shadow-emerald-500/20" 
                             : "bg-slate-800/50 border border-slate-700/50 text-slate-400 hover:text-white hover:bg-slate-700"
                         }`}
                       >
@@ -476,8 +499,8 @@ export default function AdminDashboard() {
                   </div>
                 </div>
 
-                {/* Detail Content */}
-                <div className="flex-1 overflow-y-auto p-5 custom-scrollbar">
+                {/* Detail Content - Compact grid */}
+                <div className="flex-1 overflow-y-auto p-3 custom-scrollbar">
                   {hasAnyData(selectedApplication) ? (
                     <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 max-w-7xl">
                       {/* Payment Card */}

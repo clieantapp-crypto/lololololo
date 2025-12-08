@@ -39,17 +39,15 @@ export function DetailSection({ icon: Icon, title, badge, children, delay = 0, v
 
   return (
     <div
-      className={`relative bg-slate-900/70 backdrop-blur-sm rounded-2xl border ${styles.border} p-5 transition-all duration-300 hover:shadow-xl ${styles.glow} animate-in fade-in slide-in-from-bottom-3 duration-500 fill-mode-both overflow-hidden`}
+      className={`relative bg-slate-900/70 backdrop-blur-sm rounded-xl border ${styles.border} p-3 transition-all duration-300 hover:shadow-lg ${styles.glow} animate-in fade-in slide-in-from-bottom-2 duration-300 fill-mode-both overflow-hidden`}
       style={{ animationDelay: `${delay}ms` }}
     >
-      <div className="absolute -top-16 -right-16 w-32 h-32 bg-gradient-to-br from-white/5 to-transparent rounded-full blur-2xl" />
-      
-      <div className="relative flex items-center justify-between mb-5">
-        <div className="flex items-center gap-3">
-          <div className={`p-2.5 rounded-xl ${styles.iconBg} shadow-lg`}>
-            <Icon className="w-4 h-4 text-white" />
+      <div className="relative flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <div className={`p-1.5 rounded-lg ${styles.iconBg} shadow`}>
+            <Icon className="w-3 h-3 text-white" />
           </div>
-          <h3 className="font-bold text-sm text-slate-200">{title}</h3>
+          <h3 className="font-bold text-xs text-slate-200">{title}</h3>
         </div>
         {badge}
       </div>
