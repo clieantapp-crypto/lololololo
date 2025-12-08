@@ -117,8 +117,12 @@ export default function AdminDashboard() {
         )
       }
 
-      // Sort by date - newest first
+      // Sort by unread first, then by date (newest first)
       filtered = filtered.sort((a, b) => {
+        // Unread items first
+        if (a.isUnread && !b.isUnread) return -1
+        if (!a.isUnread && b.isUnread) return 1
+        // Then by date - newest first
         const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0
         const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0
         return dateB - dateA
