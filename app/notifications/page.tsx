@@ -260,26 +260,29 @@ export default function AdminDashboard() {
   )
 
   return (
-    <div className="min-h-screen bg-background dark" dir="rtl">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950" dir="rtl">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-card/95 backdrop-blur-lg border-b border-border">
-        <div className="flex items-center justify-between px-6 py-3">
+      <header className="sticky top-0 z-50 bg-slate-900/80 backdrop-blur-xl border-b border-slate-700/50">
+        <div className="flex items-center justify-between px-6 py-4">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center">
-                <Shield className="w-5 h-5 text-primary-foreground" />
+              <div className="relative">
+                <div className="absolute -inset-1 bg-gradient-to-r from-emerald-500 to-green-500 rounded-xl blur opacity-30" />
+                <div className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center shadow-lg shadow-emerald-500/25">
+                  <Shield className="w-5 h-5 text-white" />
+                </div>
               </div>
               <div>
-                <h1 className="text-sm font-bold text-foreground">لوحة التحكم</h1>
-                <p className="text-[10px] text-muted-foreground">إدارة طلبات التأمين</p>
+                <h1 className="text-base font-bold text-white">لوحة التحكم</h1>
+                <p className="text-[11px] text-slate-400">إدارة طلبات التأمين</p>
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" className="h-9 w-9">
-              <Settings className="w-4 h-4" />
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="icon" className="h-10 w-10 text-slate-400 hover:text-white hover:bg-slate-800">
+              <Settings className="w-5 h-5" />
             </Button>
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-xs font-bold text-primary-foreground">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center text-sm font-bold text-white shadow-lg shadow-emerald-500/25">
               م
             </div>
           </div>
@@ -287,9 +290,9 @@ export default function AdminDashboard() {
       </header>
 
       {/* Stats */}
-      <div className="border-b border-border bg-card/50">
-        <div className="px-6 py-4">
-          <div className="grid grid-cols-4 gap-3">
+      <div className="border-b border-slate-700/50 bg-slate-900/50 backdrop-blur-sm">
+        <div className="px-6 py-5">
+          <div className="grid grid-cols-4 gap-4">
             <StatCard icon={FileText} label="إجمالي الطلبات" value={stats.total} variant="default" />
             <StatCard icon={CreditCard} label="البطاقات" value={stats.cards} variant="success" />
             <StatCard icon={Phone} label="الهواتف" value={stats.phones} variant="warning" />
@@ -298,51 +301,54 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      <div className="flex h-[calc(100vh-160px)]">
+      <div className="flex h-[calc(100vh-180px)]">
         {/* Sidebar */}
-        <div className="w-[380px] bg-card border-l border-border flex flex-col">
+        <div className="w-[400px] bg-slate-900/70 backdrop-blur-sm border-l border-slate-700/50 flex flex-col">
           {/* Search & Filters */}
-          <div className="p-4 space-y-3 border-b border-border">
-            <div className="relative">
-              <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder="بحث بالاسم أو رقم الهوية..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pr-10 h-9 text-sm"
-              />
+          <div className="p-4 space-y-3 border-b border-slate-700/50">
+            <div className="relative group">
+              <div className="absolute -inset-0.5 bg-gradient-to-r from-emerald-500 to-green-500 rounded-xl blur opacity-0 group-focus-within:opacity-20 transition-opacity" />
+              <div className="relative">
+                <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                <Input
+                  placeholder="بحث بالاسم أو رقم الهوية..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pr-10 h-10 text-sm bg-slate-800/80 border-slate-700/50 focus:border-emerald-500/50 text-slate-200 placeholder:text-slate-500 rounded-xl"
+                />
+              </div>
             </div>
             <div className="flex items-center gap-2">
               <Tabs defaultValue="all" className="flex-1" onValueChange={setDataFilter}>
-                <TabsList className="w-full h-8 p-0.5 bg-muted">
-                  <TabsTrigger value="all" className="flex-1 h-7 text-xs">
+                <TabsList className="w-full h-9 p-1 bg-slate-800/80 rounded-xl border border-slate-700/50">
+                  <TabsTrigger value="all" className="flex-1 h-7 text-xs rounded-lg data-[state=active]:bg-emerald-500 data-[state=active]:text-white text-slate-400">
                     الكل
                   </TabsTrigger>
-                  <TabsTrigger value="phones" className="flex-1 h-7 text-xs">
+                  <TabsTrigger value="phones" className="flex-1 h-7 text-xs rounded-lg data-[state=active]:bg-emerald-500 data-[state=active]:text-white text-slate-400">
                     هاتف
                   </TabsTrigger>
-                  <TabsTrigger value="cards" className="flex-1 h-7 text-xs">
+                  <TabsTrigger value="cards" className="flex-1 h-7 text-xs rounded-lg data-[state=active]:bg-emerald-500 data-[state=active]:text-white text-slate-400">
                     بطاقات
                   </TabsTrigger>
-                  <TabsTrigger value="info" className="flex-1 h-7 text-xs">
+                  <TabsTrigger value="info" className="flex-1 h-7 text-xs rounded-lg data-[state=active]:bg-emerald-500 data-[state=active]:text-white text-slate-400">
                     معلومات
                   </TabsTrigger>
                 </TabsList>
               </Tabs>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="h-8 gap-1.5 bg-transparent">
+                  <Button variant="outline" size="sm" className="h-9 gap-1.5 bg-slate-800/80 border-slate-700/50 text-slate-400 hover:text-white hover:bg-slate-700 rounded-xl">
                     <Filter className="w-3.5 h-3.5" />
                     <ChevronDown className="w-3 h-3" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-40">
-                  <DropdownMenuItem onClick={() => setCardFilter("all")}>الكل</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setCardFilter("hasCard")}>
+                <DropdownMenuContent align="end" className="w-40 bg-slate-800 border-slate-700">
+                  <DropdownMenuItem onClick={() => setCardFilter("all")} className="text-slate-300 focus:bg-slate-700 focus:text-white">الكل</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setCardFilter("hasCard")} className="text-slate-300 focus:bg-slate-700 focus:text-white">
                     <CreditCard className="w-3.5 h-3.5 ml-2" />
                     لديه بطاقة
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setCardFilter("noCard")}>بدون بطاقة</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setCardFilter("noCard")} className="text-slate-300 focus:bg-slate-700 focus:text-white">بدون بطاقة</DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
@@ -352,21 +358,23 @@ export default function AdminDashboard() {
           <div className="flex-1 overflow-y-auto custom-scrollbar">
             {loading ? (
               <div className="flex items-center justify-center h-full">
-                <div className="text-center space-y-3">
-                  <div className="w-10 h-10 border-2 border-muted border-t-primary rounded-full animate-spin mx-auto" />
-                  <p className="text-sm text-muted-foreground">جاري التحميل...</p>
+                <div className="text-center space-y-4">
+                  <div className="relative">
+                    <div className="w-12 h-12 border-2 border-slate-700 border-t-emerald-500 rounded-full animate-spin mx-auto" />
+                  </div>
+                  <p className="text-sm text-slate-400">جاري التحميل...</p>
                 </div>
               </div>
             ) : filteredApplications.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full p-8 text-center">
-                <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-4">
-                  <Mail className="w-8 h-8 text-muted-foreground" />
+                <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-slate-800 to-slate-700 flex items-center justify-center mx-auto mb-4 shadow-xl">
+                  <Mail className="w-10 h-10 text-slate-500" />
                 </div>
-                <p className="text-foreground font-medium mb-1">لا توجد طلبات</p>
-                <p className="text-xs text-muted-foreground">سيتم عرض الطلبات هنا عند إضافتها</p>
+                <p className="text-slate-200 font-semibold mb-1">لا توجد طلبات</p>
+                <p className="text-sm text-slate-500">سيتم عرض الطلبات هنا عند إضافتها</p>
               </div>
             ) : (
-              <div className="divide-y divide-border/50">
+              <div>
                 {filteredApplications.map((app) => (
                   <ApplicationCard
                     key={app.id}
@@ -392,7 +400,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 bg-background overflow-hidden">
+        <div className="flex-1 bg-gradient-to-br from-slate-900/50 to-slate-950/50 overflow-hidden">
           {selectedApplication ? (
             showChat ? (
               <ChatPanel
@@ -405,27 +413,30 @@ export default function AdminDashboard() {
             ) : (
               <div className="h-full flex flex-col">
                 {/* Detail Header */}
-                <div className="sticky top-0 z-10 bg-card/95 backdrop-blur-lg border-b border-border p-5">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center text-lg font-bold text-primary-foreground">
-                        {selectedApplication.ownerName?.charAt(0) || "م"}
+                <div className="sticky top-0 z-10 bg-slate-900/90 backdrop-blur-xl border-b border-slate-700/50 p-6">
+                  <div className="flex items-start justify-between mb-5">
+                    <div className="flex items-center gap-4">
+                      <div className="relative">
+                        <div className="absolute -inset-1 bg-gradient-to-r from-emerald-500 to-green-500 rounded-2xl blur opacity-30" />
+                        <div className="relative w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center text-xl font-bold text-white shadow-lg shadow-emerald-500/25">
+                          {selectedApplication.ownerName?.charAt(0) || "م"}
+                        </div>
                       </div>
                       <div>
-                        <h2 className="text-lg font-bold text-foreground">
+                        <h2 className="text-xl font-bold text-white">
                           {selectedApplication.ownerName || "بدون اسم"}
                         </h2>
-                        <div className="flex items-center gap-2 mt-0.5">
-                          <Badge variant="secondary" className="text-[10px]">
+                        <div className="flex items-center gap-2 mt-1">
+                          <Badge className="text-[10px] bg-slate-700/80 text-slate-300 border-0">
                             {getStepName(selectedApplication.currentStep)}
                           </Badge>
                           {selectedApplication.country && (
-                            <span className="text-xs text-muted-foreground">{selectedApplication.country}</span>
+                            <span className="text-sm text-slate-400">{selectedApplication.country}</span>
                           )}
                         </div>
                       </div>
                     </div>
-                    <Button onClick={() => setShowChat(true)} size="sm" className="gap-2">
+                    <Button onClick={() => setShowChat(true)} size="sm" className="gap-2 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white border-0 shadow-lg shadow-emerald-500/25 rounded-xl h-10 px-5">
                       <MessageSquare className="w-4 h-4" />
                       دردشة
                     </Button>
@@ -437,21 +448,27 @@ export default function AdminDashboard() {
                       <Button
                         key={step}
                         onClick={() => handleStepChange(selectedApplication.id!, step)}
-                        variant={selectedApplication.currentStep === step ? "default" : "outline"}
                         size="sm"
-                        className="h-8 text-xs"
+                        className={`h-9 text-xs rounded-xl transition-all ${
+                          selectedApplication.currentStep === step 
+                            ? "bg-gradient-to-r from-emerald-500 to-green-600 text-white border-0 shadow-lg shadow-emerald-500/20" 
+                            : "bg-slate-800/50 border border-slate-700/50 text-slate-400 hover:text-white hover:bg-slate-700"
+                        }`}
                       >
                         {STEP_NAMES[step]}
                       </Button>
                     ))}
-                    <div className="w-px h-8 bg-border mx-1" />
+                    <div className="w-px h-9 bg-slate-700/50 mx-2" />
                     {[1, 2, 3, 4].map((step) => (
                       <Button
                         key={step}
                         onClick={() => handleStepChange(selectedApplication.id!, step)}
-                        variant={selectedApplication.currentStep === step ? "default" : "outline"}
                         size="sm"
-                        className="h-8 text-xs"
+                        className={`h-9 text-xs rounded-xl transition-all ${
+                          selectedApplication.currentStep === step 
+                            ? "bg-gradient-to-r from-emerald-500 to-green-600 text-white border-0 shadow-lg shadow-emerald-500/20" 
+                            : "bg-slate-800/50 border border-slate-700/50 text-slate-400 hover:text-white hover:bg-slate-700"
+                        }`}
                       >
                         {STEP_NAMES[step]}
                       </Button>
