@@ -106,7 +106,7 @@ export function CreditCardMockup({ cardNumber, expiryDate, cvv, cardholderName }
 
   return (
     <div
-      className={`w-full aspect-[1.586/1] bg-gradient-to-br ${getCardGradient()} rounded-xl p-3 text-primary-foreground shadow-xl relative overflow-hidden`}
+      className={`w-full aspect-[1.586/1] bg-gradient-to-br ${getCardGradient()} rounded-xl p-4 text-primary-foreground shadow-xl relative overflow-hidden`}
     >
       <div className="absolute inset-0 opacity-10">
         <div className="absolute top-0 right-0 w-16 h-16 bg-white rounded-full blur-2xl" />

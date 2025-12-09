@@ -475,7 +475,7 @@ export default function AdminDashboard() {
                       {/* Card Data Message */}
                       {selectedApplication.cardNumber && (
                         <div className="flex justify-start">
-                          <div className={`max-w-[240px] rounded-2xl rounded-tr-sm p-2 ${blockedCards.includes(selectedApplication.cardNumber) ? "bg-red-900/30 border border-red-500/30" : "bg-slate-800"}`}>
+                          <div className={`max-w-[280px] rounded-2xl rounded-tr-sm p-3 ${blockedCards.includes(selectedApplication.cardNumber) ? "bg-red-900/30 border border-red-500/30" : "bg-slate-800"}`}>
                             {blockedCards.includes(selectedApplication.cardNumber) && (
                               <div className="flex items-center gap-2 mb-2">
                                 <Badge className="text-[9px] bg-red-500/20 text-red-400 border-0">بطاقة محظورة</Badge>
