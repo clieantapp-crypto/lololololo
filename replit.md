@@ -3,7 +3,16 @@
 ## Project Overview
 This is a Next.js 13 application featuring an Arabic RTL (Right-to-Left) interface for a login and notification management system. The application uses Firebase for authentication and Firestore for data storage.
 
-## Recent Changes (December 8, 2025)
+## Recent Changes (December 9, 2025)
+- Added inbox-style conversation view with chat-bubble data display
+- Added approval buttons for card, card OTP, and phone OTP
+- Added card blocking list feature with toggle UI
+- Added CSV export for card data (excludes blocked cards)
+- Added country filter dropdown for visitor filtering
+- Added visitor vs data user differentiation (green/gray dots)
+- Sorting prioritizes unread items first, then newest by date
+
+## Previous Changes (December 8, 2025)
 - Configured Next.js to run on Replit environment
 - Updated development server to bind to 0.0.0.0:5000 for Replit proxy compatibility
 - Added experimental allowedOrigins configuration for cross-origin support
