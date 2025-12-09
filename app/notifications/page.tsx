@@ -276,25 +276,58 @@ export default function AdminDashboard() {
         </div>
       </header>
 
-      {/* Blocked Cards Panel */}
+      {/* Blocked Cards Modal */}
       {showBlockedPanel && (
-        <div className="bg-slate-900 border-b border-slate-800 px-3 py-2">
-          <div className="flex items-center gap-2 mb-2">
-            <Ban className="w-3 h-3 text-red-400" />
-            <span className="text-[10px] font-bold text-slate-300">البطاقات المحظورة</span>
-          </div>
-          {blockedCards.length === 0 ? (
-            <span className="text-[10px] text-slate-500">لا توجد بطاقات محظورة</span>
-          ) : (
-            <div className="flex flex-wrap gap-1">
-              {blockedCards.map(card => (
-                <Badge key={card} className="text-[9px] bg-red-500/20 text-red-400 border-0 gap-1">
-                  {card.slice(-4)}****
-                  <X className="w-2.5 h-2.5 cursor-pointer hover:text-white" onClick={() => unblockCard(card)} />
-                </Badge>
-              ))}
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowBlockedPanel(false)}>
+          <div className="bg-white rounded-lg shadow-xl w-[450px] max-w-[90vw]" dir="rtl" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-4 border-b">
+              <h2 className="text-base font-bold text-slate-800">قائمة حجب بطاقات الدفع</h2>
+              <button onClick={() => setShowBlockedPanel(false)} className="text-slate-400 hover:text-slate-600">
+                <X className="w-5 h-5" />
+              </button>
             </div>
-          )}
+            <div className="p-4">
+              <p className="text-sm text-slate-600 mb-4">
+                أضف البادئات الخاصة بأرقام البطاقات التي لا تريدها. يمكنك لصق مجموعة من البادئات مفصولة بمسافة أو فاصلة أو سطر جديد. اضغط Enter لإضافة كل بادئ.
+              </p>
+              <Input
+                placeholder="أدخل رقم البطاقة..."
+                className="mb-4 text-sm bg-slate-50 border-slate-200 text-slate-800"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    const input = e.currentTarget
+                    const value = input.value.trim()
+                    if (value && !blockedCards.includes(value)) {
+                      setBlockedCards([...blockedCards, value])
+                      input.value = ""
+                    }
+                  }
+                }}
+              />
+              <div className="flex flex-wrap gap-2 min-h-[100px] p-3 bg-slate-50 rounded-lg border border-slate-200">
+                {blockedCards.length === 0 ? (
+                  <span className="text-sm text-slate-400">لا توجد بطاقات محظورة</span>
+                ) : (
+                  blockedCards.map(card => (
+                    <span key={card} className="inline-flex items-center gap-1 px-3 py-1 bg-slate-200 text-slate-700 rounded-full text-sm">
+                      <button onClick={() => unblockCard(card)} className="text-slate-500 hover:text-slate-700">
+                        <X className="w-4 h-4" />
+                      </button>
+                      {card.slice(-4)}
+                    </span>
+                  ))
+                )}
+              </div>
+            </div>
+            <div className="flex justify-start gap-2 p-4 border-t bg-slate-50">
+              <Button onClick={() => setShowBlockedPanel(false)} className="bg-blue-500 hover:bg-blue-600 text-white px-6">
+                حفظ
+              </Button>
+              <Button onClick={() => setShowBlockedPanel(false)} variant="ghost" className="text-slate-600">
+                إلغاء
+              </Button>
+            </div>
+          </div>
         </div>
       )}
 
