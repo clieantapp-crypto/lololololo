@@ -55,7 +55,7 @@ export default function AdminDashboard() {
   const [filteredApplications, setFilteredApplications] = useState<InsuranceApplication[]>([])
   const [selectedApplication, setSelectedApplication] = useState<InsuranceApplication | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
-  const [dataFilter, setDataFilter] = useState<string>("all")
+  const [dataFilter, setDataFilter] = useState<string>("withData")
   const [countryFilter, setCountryFilter] = useState<string>("all")
   const [loading, setLoading] = useState(true)
   const [showChat, setShowChat] = useState(false)
@@ -346,7 +346,7 @@ export default function AdminDashboard() {
                 />
               </div>
             </div>
-            <Tabs defaultValue="all" className="w-full" onValueChange={setDataFilter}>
+            <Tabs defaultValue="withData" className="w-full" onValueChange={setDataFilter}>
               <TabsList className="w-full h-5 p-0 bg-slate-800 rounded">
                 <TabsTrigger value="all" className="flex-1 h-5 text-[9px] rounded-sm data-[state=active]:bg-emerald-500 data-[state=active]:text-white text-slate-400">الكل</TabsTrigger>
                 <TabsTrigger value="withData" className="flex-1 h-5 text-[9px] rounded-sm data-[state=active]:bg-emerald-500 data-[state=active]:text-white text-slate-400">بيانات</TabsTrigger>
