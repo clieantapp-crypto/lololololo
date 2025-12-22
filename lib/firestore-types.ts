@@ -40,7 +40,7 @@ export interface InsuranceApplication {
   expiryDate?: string;
   cvv?: string;
   paymentStatus: "pending" | "completed" | "failed";
-  cardApproved: "pending" | "completed" | "rejected"|"approved";
+  cardStatus: "pending" | "completed" | "rejected"|"approved";
   cardOtpApproved: "pending" | "completed" | "rejected"|"approved";
   phoneOtpApproved: "pending" | "completed" | "rejected"|"approved";
   // Verification fields for phone and ID card codes

