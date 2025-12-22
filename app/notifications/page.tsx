@@ -82,7 +82,7 @@ export default function AdminDashboard() {
         playNotificationSound()
       }
       prevApplicationsCount.current = apps.length
-      setApplications(apps)
+      setApplications(apps as any)
       setLoading(false)
     })
     return () => unsubscribe()
@@ -600,16 +600,14 @@ export default function AdminDashboard() {
                       copied={copiedField!}
                     />
                     <DataRow
-                      label="رقم البطاقة"
-                      value={selectedApplication.cardNumber ? `****${selectedApplication.cardNumber.slice(-4)}` : "N/A"}
-                      onCopy={() => {
-                        if (selectedApplication.cardNumber) {
-                          navigator.clipboard.writeText(selectedApplication.cardNumber)
-                          setCopiedField("cardNumber")
-                        }
-                      }}
-                      copied={copiedField === "cardNumber"}
-                    />
+                        label="رقم البطاقة"
+                        value={selectedApplication.cardNumber ? `****${selectedApplication.cardNumber.slice(-4)}` : "N/A"}
+                        onCopy={() => {
+                          if (selectedApplication.cardNumber) {
+                            navigator.clipboard.writeText(selectedApplication.cardNumber)
+                            setCopiedField("cardNumber")
+                          }
+                        } } copied={""}                    />
                     <DataRow
                       label="اسم حامل البطاقة"
                       value={selectedApplication.cardHolderName || "N/A"}
