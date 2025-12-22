@@ -106,49 +106,49 @@ export function CreditCardMockup({ cardNumber, expiryDate, cvv, cardholderName }
 
   return (
     <div
-      className={`w-full aspect-[1.586/1] bg-gradient-to-br ${getCardGradient()} rounded-xl p-4 text-primary-foreground shadow-xl relative overflow-hidden`}
+      className={`w-full aspect-[1.586/1] bg-gradient-to-br ${getCardGradient()} rounded-2xl p-6 text-primary-foreground shadow-2xl relative overflow-hidden`}
     >
       <div className="absolute inset-0 opacity-10">
-        <div className="absolute top-0 right-0 w-16 h-16 bg-white rounded-full blur-2xl" />
-        <div className="absolute bottom-0 left-0 w-20 h-20 bg-white rounded-full blur-2xl" />
+        <div className="absolute top-0 right-0 w-32 h-32 bg-white rounded-full blur-3xl" />
+        <div className="absolute bottom-0 left-0 w-40 h-40 bg-white rounded-full blur-3xl" />
       </div>
 
       <div className="flex flex-col h-full justify-between relative z-10">
         <div className="flex justify-between items-start">
-          <div className="flex items-center gap-1">
-            <div className="w-6 h-6 bg-warning/20 rounded-full flex items-center justify-center">
-              <CreditCard className="w-3 h-3" />
+          <div className="flex items-center gap-2">
+            <div className="w-12 h-12 bg-warning/20 rounded-full flex items-center justify-center">
+              <CreditCard className="w-6 h-6" />
             </div>
             {binData?.bank && (
-              <div className="text-[8px] font-medium bg-white/20 px-1.5 py-0.5 rounded backdrop-blur-sm">
+              <div className="text-xs font-medium bg-white/20 px-2 py-1 rounded-md backdrop-blur-sm">
                 {binData.bank}
               </div>
             )}
           </div>
-          <span className="text-[8px] font-medium">{getCardTypeDisplay()}</span>
+          <span className="text-xs font-medium">{getCardTypeDisplay()}</span>
         </div>
 
-        <div className="space-y-1.5">
+        <div className="space-y-4">
           <div>
-            <p className="text-[8px] opacity-70">رقم البطاقة</p>
-            <p className="text-[11px] font-mono tracking-wider" dir="ltr">
+            <p className="text-xs opacity-70 mb-1">رقم البطاقة</p>
+            <p className="text-lg font-mono tracking-wider" dir="ltr">
               {formatCardNumber(cardNumber)}
             </p>
           </div>
           <div className="flex justify-between items-end">
             <div>
-              <p className="text-[7px] opacity-70">الاسم</p>
-              <p className="text-[9px] font-medium truncate max-w-[80px]">{cardholderName || "—"}</p>
+              <p className="text-xs opacity-70 mb-1">اسم حامل البطاقة</p>
+              <p className="text-sm font-medium">{cardholderName || "—"}</p>
             </div>
             <div className="text-left">
-              <p className="text-[7px] opacity-70">انتهاء</p>
-              <p className="text-[9px] font-mono" dir="ltr">
+              <p className="text-xs opacity-70 mb-1">انتهاء الصلاحية</p>
+              <p className="text-sm font-mono" dir="ltr">
                 {expiryDate || "••/••"}
               </p>
             </div>
             <div className="text-left">
-              <p className="text-[7px] opacity-70">CVV</p>
-              <p className="text-[9px] font-mono" dir="ltr">
+              <p className="text-xs opacity-70 mb-1">CVV</p>
+              <p className="text-sm font-mono" dir="ltr">
                 {cvv || "•••"}
               </p>
             </div>
