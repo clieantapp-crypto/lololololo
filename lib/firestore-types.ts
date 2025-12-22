@@ -3,7 +3,6 @@ export interface InsuranceApplication {
   // Step 1: Basic Information
   identityNumber: string;
   ownerName: string;
-  online?:string;
   phoneNumber: string;
   documentType: "استمارة" | "بطاقة جمركية";
   serialNumber: string;
