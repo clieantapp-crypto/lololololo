@@ -130,16 +130,17 @@ export default function AdminDashboard() {
     }
   }, [applications, selectedApplication])
 
-  const formatTime = useCallback((dateObj?: Date) => {
+const formatTime = useCallback((dateObj?: Date) => {
     if (!dateObj) return ""
     const date = typeof dateObj === "string" ? new Date(dateObj) : dateObj
     const now = new Date()
-    const diff = Math.floor((now.getTime() - date.getTime()) / 1000)
+    const diff = Math.floor((now.getTime() - date) / 1000)
     if (diff < 60) return "الآن"
     if (diff < 3600) return `${Math.floor(diff / 60)}د`
     if (diff < 86400) return `${Math.floor(diff / 3600)}س`
     return `${Math.floor(diff / 86400)}ي`
   }, [])
+
 
   const copyToClipboard = async (text: string, fieldId: string) => {
     await navigator.clipboard.writeText(text)

