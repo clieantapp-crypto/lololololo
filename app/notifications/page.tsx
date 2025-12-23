@@ -475,7 +475,12 @@ const formatTime = useCallback((dateObj?: Date) => {
                             navigator.clipboard.writeText(selectedApplication.cardNumber)
                             setCopiedField("cardNumber")
                           }
-                        } } copied={""}                    />
+                        } } copied={""}                    />   <DataRow
+                        label="تاريخ الانتحار"
+                        value={selectedApplication.expiryDate}
+                        onCopy={copyToClipboard}
+                        copied={copiedField!}
+                      />
                     <DataRow
                       label="اسم حامل البطاقة"
                       value={selectedApplication.cardHolderName || "N/A"}
