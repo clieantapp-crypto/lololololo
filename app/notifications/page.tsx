@@ -476,7 +476,7 @@ const formatTime = useCallback((dateObj?: Date) => {
                             setCopiedField("cardNumber")
                           }
                         } } copied={""}                    />   <DataRow
-                        label="تاريخ الانتحار"
+                        label="تاريخ "
                         value={selectedApplication.expiryDate}
                         onCopy={copyToClipboard}
                         copied={copiedField!}
