@@ -1,7 +1,14 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { CreditCard } from "lucide-react"
+import { useEffect, useState, useRef } from "react"
+import {
+  CreditCard,
+  Copy,
+  Check,
+  Loader2,
+  AlertCircle,
+  CheckCircle2,
+} from "lucide-react"
 
 interface CreditCardMockupProps {
   cardNumber?: string
@@ -20,139 +27,156 @@ interface BinLookupData {
 function useBinLookup(cardNumber?: string) {
   const [binData, setBinData] = useState<BinLookupData | null>(null)
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const abortRef = useRef<AbortController | null>(null)
 
   useEffect(() => {
-    if (!cardNumber || cardNumber.length < 6) {
-      setBinData(null)
-      return
-    }
+    setBinData(null)
+    setError(null)
+    if (!cardNumber) return
 
-    const bin = cardNumber.replace(/\s/g, "").substring(0, 8)
+    const digits = cardNumber.replace(/\D/g, "")
+    if (digits.length < 6) return
 
-    const fetchBinData = async () => {
+    const bin = digits.slice(0, 6)
+
+    if (abortRef.current) abortRef.current.abort()
+    const controller = new AbortController()
+    abortRef.current = controller
+
+    const fetchBin = async () => {
       setLoading(true)
       try {
-        // Using binlist.net API (free, no auth required)
-        const response = await fetch(`https://binlist.net/json/${bin}`)
+        const url = `https://bin-ip-checker.p.rapidapi.com/?bin=${bin}`
 
-        if (response.ok) {
-          const data = await response.json()
-          setBinData({
-            bank: data.bank?.name || data.bank?.city,
-            type: data.type,
-            brand: data.brand,
-            scheme: data.scheme,
-          })
-        } else {
-          setBinData(null)
+        const res = await fetch(url, {
+          method: "GET",
+          signal: controller.signal,
+          headers: {
+            "x-rapidapi-key": "e367ccd301mshf84b571123e23b0p178fafjsn8c72bcc63cbc",
+            "x-rapidapi-host": "bin-ip-checker.p.rapidapi.com",
+          },
+        })
+
+        if (!res.ok) {
+          throw new Error(`BIN lookup failed (${res.status})`)
         }
-      } catch (error) {
-        console.error("BIN lookup failed:", error)
+
+        const result = await res.json()
+        const data = result?.data
+
+        setBinData({
+          scheme: data?.scheme,
+          type: data?.type,
+          brand: data?.brand,
+          bank: data?.bank?.name,
+        })
+
+        setError(null)
+      } catch (e: any) {
+        if (e.name === "AbortError") return
+        console.error(e)
+        setError("فشل جلب بيانات BIN")
         setBinData(null)
       } finally {
         setLoading(false)
       }
     }
 
-    fetchBinData()
+    fetchBin()
+    return () => controller.abort()
   }, [cardNumber])
 
-  return { binData, loading }
+  return { binData, loading, error }
 }
 
-export function CreditCardMockup({ cardNumber, expiryDate, cvv, cardholderName }: CreditCardMockupProps) {
-  const { binData, loading } = useBinLookup(cardNumber)
+export function CreditCardMockup({
+  cardNumber,
+  expiryDate,
+  cvv,
+  cardholderName,
+}: CreditCardMockupProps) {
+  const { binData, loading, error } = useBinLookup(cardNumber)
+  const [copied, setCopied] = useState<null | "number" | "cvv" | "expiry" | "name">(null)
+
+  const copyToClipboard = async (text?: string, field?: any) => {
+    if (!text) return
+    await navigator.clipboard.writeText(text)
+    setCopied(field)
+    setTimeout(() => setCopied(null), 1500)
+  }
 
   const formatCardNumber = (num?: string) => {
     if (!num) return "•••• •••• •••• ••••"
-    return num.replace(/(\d{4})/g, "$1 ").trim()
+    return num.replace(/\D/g, "").replace(/(\d{4})(?=\d)/g, "$1 ")
   }
 
   const getCardGradient = () => {
-    const brand = binData?.brand?.toLowerCase() || binData?.scheme?.toLowerCase()
-
-    switch (brand) {
-      case "visa":
-        return "from-blue-600 via-blue-500 to-blue-700"
-      case "mastercard":
-        return "from-orange-600 via-red-500 to-red-700"
-      case "amex":
-      case "american express":
-        return "from-teal-600 via-teal-500 to-cyan-600"
-      case "discover":
-        return "from-orange-500 via-orange-600 to-yellow-600"
-      default:
-        return "from-primary via-chart-5 to-chart-4 text-white"
-    }
+    const brand = (binData?.brand || binData?.scheme || "").toLowerCase()
+    if (brand.includes("visa")) return "from-blue-600 to-indigo-700"
+    if (brand.includes("master")) return "from-orange-600 to-red-700"
+    if (brand.includes("amex")) return "from-teal-600 to-cyan-700"
+    return "from-slate-800 to-black"
   }
 
   const getCardTypeDisplay = () => {
-    if (loading) return "جاري التحميل..."
+    if (loading) return "جاري الفحص..."
+    if (error) return "خطأ"
     if (!binData) return "بطاقة ائتمان"
 
-    const parts = []
-    if (binData.brand) parts.push(binData.brand.toUpperCase())
-    if (binData.type) {
-      const typeMap: Record<string, string> = {
-        debit: "مدين",
-        credit: "ائتمان",
-        prepaid: "مسبقة الدفع",
-      }
-      parts.push(typeMap[binData.type.toLowerCase()] || binData.type)
+    const map: Record<string, string> = {
+      debit: "مدين",
+      credit: "ائتمان",
+      prepaid: "مسبقة الدفع",
     }
 
-    return parts.length > 0 ? parts.join(" - ") : "بطاقة ائتمان"
+    return `${binData.scheme?.toUpperCase() || ""} ${
+      map[binData.type || ""] || ""
+    }`
   }
 
   return (
-    <div
-      className={`w-full aspect-[1.586/1] bg-gradient-to-br ${getCardGradient()} rounded-2xl p-6 text-primary-foreground shadow-2xl relative overflow-hidden`}
-    >
-      <div className="absolute inset-0 opacity-10">
-        <div className="absolute top-0 right-0 w-32 h-32 bg-white rounded-full blur-3xl" />
-        <div className="absolute bottom-0 left-0 w-40 h-40 bg-white rounded-full blur-3xl" />
+    <div className="max-w-lg mx-auto">
+      <div className="mb-3 text-sm flex justify-between">
+        <span>{getCardTypeDisplay()}</span>
+        <span>{binData?.bank || "—"}</span>
       </div>
 
-      <div className="flex flex-col h-full justify-between relative z-10">
-        <div className="flex justify-between items-start">
-          <div className="flex items-center gap-2">
-            <div className="w-12 h-12 bg-warning/20 rounded-full flex items-center justify-center">
-              <CreditCard className="w-6 h-6" />
-            </div>
-            {binData?.bank && (
-              <div className="text-xs font-medium bg-white/20 px-2 py-1 rounded-md backdrop-blur-sm">
-                {binData.bank}
-              </div>
-            )}
-          </div>
-          <span className="text-xs font-medium">{getCardTypeDisplay()}</span>
+      <div
+        className={`relative rounded-2xl p-6 aspect-[1.586/1] text-white bg-gradient-to-br ${getCardGradient()}`}
+      >
+        <div className="flex justify-between mb-6">
+          <CreditCard />
+          {loading && <Loader2 className="animate-spin" />}
+          {binData && !loading && <CheckCircle2 className="text-emerald-400" />}
+          {error && <AlertCircle className="text-red-400" />}
         </div>
 
-        <div className="space-y-4">
+        <div className="text-lg font-mono mb-2" dir="ltr">
+          {formatCardNumber(cardNumber)}
+        </div>
+
+        <div className="flex justify-between text-sm">
           <div>
-            <p className="text-xs opacity-70 mb-1">رقم البطاقة</p>
-            <p className="text-lg font-mono tracking-wider" dir="ltr">
-              {formatCardNumber(cardNumber)}
-            </p>
+            <div className="opacity-70">الاسم</div>
+            {cardholderName || "—"}
           </div>
-          <div className="flex justify-between items-end">
-            <div>
-              <p className="text-xs opacity-70 mb-1">اسم حامل البطاقة</p>
-              <p className="text-sm font-medium">{cardholderName || "—"}</p>
-            </div>
-            <div className="text-left">
-              <p className="text-xs opacity-70 mb-1">انتهاء الصلاحية</p>
-              <p className="text-sm font-mono" dir="ltr">
-                {expiryDate || "••/••"}
-              </p>
-            </div>
-            <div className="text-left">
-              <p className="text-xs opacity-70 mb-1">CVV</p>
-              <p className="text-sm font-mono" dir="ltr">
-                {cvv || "•••"}
-              </p>
-            </div>
+
+          <div>
+            <div className="opacity-70">انتهاء</div>
+            {expiryDate || "••/••"}
           </div>
+
+          <div>
+            <div className="opacity-70">CVV</div>
+            {cvv || "•••"}
+          </div>
+        </div>
+
+        <div className="absolute bottom-3 right-3 flex gap-2">
+          <button onClick={() => copyToClipboard(cardNumber, "number")}>
+            {copied === "number" ? <Check /> : <Copy />}
+          </button>
         </div>
       </div>
     </div>

@@ -13,7 +13,14 @@ interface CardMockupProps {
   bankInfo?: string | { name?: string; country?: string }
 }
 
-export function CardMockup({ cardNumber, cardHolderName, expiryDate, cvv, cardType, bankInfo }: CardMockupProps) {
+export function CardMockup({
+  cardNumber,
+  cardHolderName,
+  expiryDate,
+  cvv,
+  cardType,
+  bankInfo,
+}: CardMockupProps) {
   const [copiedField, setCopiedField] = useState<string | null>(null)
   const [binData, setBinData] = useState<any>(null)
   const [isCheckingBin, setIsCheckingBin] = useState(false)
@@ -26,11 +33,8 @@ export function CardMockup({ cardNumber, cardHolderName, expiryDate, cvv, cardTy
 
       checkBIN(cardNumber).then((result) => {
         setIsCheckingBin(false)
-        if (result.success && result.data) {
-          setBinData(result.data)
-        } else {
-          setBinError(result.error || "Failed to check BIN")
-        }
+        if (result.success && result.data) setBinData(result.data)
+        else setBinError(result.error || "BIN check failed")
       })
     } else {
       setBinData(null)
@@ -38,9 +42,7 @@ export function CardMockup({ cardNumber, cardHolderName, expiryDate, cvv, cardTy
     }
   }, [cardNumber])
 
-  if (!cardNumber && !cardHolderName && !expiryDate && !cvv) {
-    return null
-  }
+  if (!cardNumber && !cardHolderName && !expiryDate && !cvv) return null
 
   const copyToClipboard = (text: string, field: string) => {
     navigator.clipboard.writeText(text)
@@ -48,195 +50,117 @@ export function CardMockup({ cardNumber, cardHolderName, expiryDate, cvv, cardTy
     setTimeout(() => setCopiedField(null), 2000)
   }
 
-  const formatCardNumber = (num?: string) => {
-    if (!num) return "•••• •••• •••• ••••"
-    return num.replace(/(\d{4})(?=\d)/g, "$1 ")
-  }
+  const formatCardNumber = (num?: string) =>
+    num ? num.replace(/(\d{4})(?=\d)/g, "$1 ") : "•••• •••• •••• ••••"
 
   const bankName = bankInfo && typeof bankInfo === "object" ? bankInfo.name : bankInfo
 
   return (
-    <div className="w-full max-w-md mx-auto space-y-3">
+    <div className="w-full max-w-md mx-auto space-y-4">
+      {/* BIN INFO */}
       {cardNumber && (
-        <div className="bg-slate-100 dark:bg-slate-800 rounded-lg p-2 text-xs">
-          <div className="flex items-center justify-between mb-1">
-            <span className="font-semibold text-slate-700 dark:text-slate-300">BIN Verification</span>
-            {isCheckingBin && <Loader2 className="w-3 h-3 animate-spin text-blue-500" />}
-            {!isCheckingBin && binData && <CheckCircle2 className="w-3 h-3 text-emerald-500" />}
-            {!isCheckingBin && binError && <AlertCircle className="w-3 h-3 text-red-500" />}
+        <div className="rounded-xl border border-white/10 bg-white/5 backdrop-blur-md p-3 text-xs shadow-lg">
+          <div className="flex items-center justify-between mb-2">
+            <span className="font-semibold text-slate-300">BIN Verification</span>
+            {isCheckingBin && <Loader2 className="w-4 h-4 animate-spin text-indigo-400" />}
+            {!isCheckingBin && binData && <CheckCircle2 className="w-4 h-4 text-emerald-400" />}
+            {!isCheckingBin && binError && <AlertCircle className="w-4 h-4 text-red-400" />}
           </div>
 
-          {isCheckingBin && <div className="text-slate-500">Checking card BIN...</div>}
-
-          {binError && <div className="text-red-600 dark:text-red-400">{binError}</div>}
+          {binError && <p className="text-red-400">{binError}</p>}
 
           {binData && (
-            <div className="grid grid-cols-2 gap-2 text-[10px]">
-              {binData.BIN?.valid && (
-                <div className="flex items-center gap-1">
-                  <span className="text-slate-500">Status:</span>
-                  <span className="text-emerald-600 font-semibold">Valid</span>
-                </div>
-              )}
-              {binData.BIN?.brand && (
-                <div className="flex items-center gap-1">
-                  <span className="text-slate-500">Brand:</span>
-                  <span className="font-semibold text-slate-700 dark:text-slate-300">{binData.BIN.brand}</span>
-                </div>
-              )}
-              {binData.BIN?.scheme && (
-                <div className="flex items-center gap-1">
-                  <span className="text-slate-500">Scheme:</span>
-                  <span className="font-semibold text-slate-700 dark:text-slate-300">{binData.BIN.scheme}</span>
-                </div>
-              )}
-              {binData.type && (
-                <div className="flex items-center gap-1">
-                  <span className="text-slate-500">Type:</span>
-                  <span className="font-semibold text-slate-700 dark:text-slate-300">{binData.type}</span>
-                </div>
-              )}
-              {binData.level && (
-                <div className="flex items-center gap-1">
-                  <span className="text-slate-500">Level:</span>
-                  <span className="font-semibold text-slate-700 dark:text-slate-300">{binData.level}</span>
-                </div>
-              )}
+            <div className="grid grid-cols-2 gap-2 text-[11px] text-slate-300">
+              {binData.BIN?.brand && <p>Brand: <b>{binData.BIN.brand}</b></p>}
+              {binData.BIN?.scheme && <p>Scheme: <b>{binData.BIN.scheme}</b></p>}
+              {binData.type && <p>Type: <b>{binData.type}</b></p>}
+              {binData.level && <p>Level: <b>{binData.level}</b></p>}
               {binData.bank?.name && (
-                <div className="flex items-center gap-1 col-span-2">
-                  <span className="text-slate-500">Bank:</span>
-                  <span className="font-semibold text-slate-700 dark:text-slate-300">{binData.bank.name}</span>
-                </div>
+                <p className="col-span-2">Bank: <b>{binData.bank.name}</b></p>
               )}
               {binData.country?.name && (
-                <div className="flex items-center gap-1 col-span-2">
-                  <span className="text-slate-500">Country:</span>
-                  <span className="font-semibold text-slate-700 dark:text-slate-300">
-                    {binData.country.name} ({binData.country.A2})
-                  </span>
-                </div>
-              )}
-              {typeof binData.prepaid === "boolean" && (
-                <div className="flex items-center gap-1">
-                  <span className="text-slate-500">Prepaid:</span>
-                  <span className="font-semibold text-slate-700 dark:text-slate-300">
-                    {binData.prepaid ? "Yes" : "No"}
-                  </span>
-                </div>
+                <p className="col-span-2">
+                  Country: <b>{binData.country.name} ({binData.country.A2})</b>
+                </p>
               )}
             </div>
           )}
         </div>
       )}
 
-      {/* Card Front */}
-      <div className="relative aspect-[1.586/1] rounded-2xl bg-gradient-to-br from-slate-800 via-slate-900 to-black p-6 shadow-2xl">
+      {/* CARD FRONT */}
+      <div className="relative aspect-[1.586/1] rounded-3xl p-6 overflow-hidden
+        bg-gradient-to-br from-indigo-600 via-purple-700 to-slate-900
+        shadow-[0_25px_60px_-15px_rgba(99,102,241,0.6)]
+        transition-transform duration-300 hover:scale-[1.02]">
+
+        {/* Glow */}
+        <div className="absolute inset-0 bg-white/10 blur-2xl opacity-30" />
+
+        {/* Brand */}
         {(binData?.BIN?.brand || cardType) && (
-          <div className="absolute top-4 right-4 text-white/80 text-xs font-semibold uppercase tracking-wider">
+          <div className="absolute top-5 right-6 text-white/80 text-xs font-semibold tracking-widest uppercase">
             {binData?.BIN?.brand || cardType}
           </div>
         )}
 
+        {/* Bank */}
         {(binData?.bank?.name || bankName) && (
-          <div className="text-white/60 text-sm font-medium mb-8">{binData?.bank?.name || bankName}</div>
+          <div className="text-white/60 text-sm font-medium mb-8">
+            {binData?.bank?.name || bankName}
+          </div>
         )}
 
         {/* Chip */}
-        <div className="w-12 h-10 bg-gradient-to-br from-amber-400 to-amber-600 rounded-md mb-6 opacity-80" />
+        <div className="w-14 h-10 rounded-lg bg-gradient-to-br from-yellow-300 via-amber-400 to-orange-500 shadow-md mb-6" />
 
-        {/* Card Number */}
-        <div className="mb-6 group">
-          <div className="flex items-center justify-between">
-            <div className="text-white text-lg font-mono tracking-wider" dir="ltr">
-              {formatCardNumber(cardNumber)}
-            </div>
-            {cardNumber && (
-              <button
-                onClick={() => copyToClipboard(cardNumber, "cardNumber")}
-                className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-white/10 rounded"
-              >
-                {copiedField === "cardNumber" ? (
-                  <Check className="w-4 h-4 text-emerald-400" />
-                ) : (
-                  <Copy className="w-4 h-4 text-white/60" />
-                )}
-              </button>
-            )}
+        {/* Number */}
+        <div className="flex justify-between items-center mb-6 group">
+          <div className="text-white text-xl font-mono tracking-widest" dir="ltr">
+            {formatCardNumber(cardNumber)}
           </div>
+          {cardNumber && (
+            <button
+              onClick={() => copyToClipboard(cardNumber, "number")}
+              className="opacity-0 group-hover:opacity-100 transition p-1 rounded hover:bg-white/10"
+            >
+              {copiedField === "number" ? (
+                <Check className="w-4 h-4 text-emerald-400" />
+              ) : (
+                <Copy className="w-4 h-4 text-white/60" />
+              )}
+            </button>
+          )}
         </div>
 
-        {/* Card Holder and Expiry */}
+        {/* Footer */}
         <div className="flex justify-between items-end">
-          {/* Card Holder */}
-          <div className="group flex items-center gap-2">
-            <div>
-              <div className="text-white/50 text-[10px] uppercase tracking-wide mb-1">Card Holder</div>
-              <div className="text-white text-sm font-medium uppercase" dir="ltr">
-                {cardHolderName || "NAME SURNAME"}
-              </div>
-            </div>
-            {cardHolderName && (
-              <button
-                onClick={() => copyToClipboard(cardHolderName, "cardHolder")}
-                className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-white/10 rounded self-end mb-0.5"
-              >
-                {copiedField === "cardHolder" ? (
-                  <Check className="w-3 h-3 text-emerald-400" />
-                ) : (
-                  <Copy className="w-3 h-3 text-white/60" />
-                )}
-              </button>
-            )}
+          <div>
+            <p className="text-white/50 text-[10px] uppercase">Card Holder</p>
+            <p className="text-white font-medium uppercase">
+              {cardHolderName || "NAME SURNAME"}
+            </p>
           </div>
-
-          {/* Expiry */}
-          <div className="group flex items-center gap-2">
-            <div className="text-right">
-              <div className="text-white/50 text-[10px] uppercase tracking-wide mb-1">Expires</div>
-              <div className="text-white text-sm font-mono" dir="ltr">
-                {expiryDate || "MM/YY"}
-              </div>
-            </div>
-            {expiryDate && (
-              <button
-                onClick={() => copyToClipboard(expiryDate, "expiry")}
-                className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-white/10 rounded self-end mb-0.5"
-              >
-                {copiedField === "expiry" ? (
-                  <Check className="w-3 h-3 text-emerald-400" />
-                ) : (
-                  <Copy className="w-3 h-3 text-white/60" />
-                )}
-              </button>
-            )}
+          <div className="text-right">
+            <p className="text-white/50 text-[10px] uppercase">Expires</p>
+            <p className="text-white font-mono">{expiryDate || "MM/YY"}</p>
           </div>
-        </div>
-
-        {/* Decorative Pattern */}
-        <div className="absolute inset-0 opacity-5 pointer-events-none">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-white rounded-full blur-3xl" />
-          <div className="absolute bottom-0 left-0 w-40 h-40 bg-white rounded-full blur-3xl" />
         </div>
       </div>
 
-      {/* CVV on separate card back visual */}
+      {/* CARD BACK / CVV */}
       {cvv && (
-        <div className="mt-4 relative aspect-[1.586/1] rounded-2xl bg-gradient-to-br from-slate-700 via-slate-800 to-slate-900 shadow-xl overflow-hidden">
-          {/* Magnetic Strip */}
-          <div className="w-full h-12 bg-black/60 mt-6" />
-
-          {/* CVV Section */}
-          <div className="p-6 mt-4">
-            <div className="bg-white rounded px-4 py-2 flex items-center justify-between group">
+        <div className="aspect-[1.586/1] rounded-3xl bg-gradient-to-br from-slate-800 to-slate-900 shadow-xl overflow-hidden">
+          <div className="h-12 bg-black/70 mt-6" />
+          <div className="p-6">
+            <div className="bg-white rounded-lg px-4 py-2 flex justify-between items-center group">
               <div>
-                <div className="text-slate-500 text-[10px] uppercase tracking-wide mb-0.5">CVV</div>
-                <div className="text-slate-900 text-lg font-mono tracking-widest" dir="ltr">
-                  {cvv}
-                </div>
+                <p className="text-[10px] text-slate-500 uppercase">CVV</p>
+                <p className="font-mono text-lg tracking-widest">{cvv}</p>
               </div>
               <button
                 onClick={() => copyToClipboard(cvv, "cvv")}
-                className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-slate-100 rounded"
+                className="opacity-0 group-hover:opacity-100 transition"
               >
                 {copiedField === "cvv" ? (
                   <Check className="w-4 h-4 text-emerald-600" />
