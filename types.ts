@@ -59,7 +59,7 @@ export interface InsuranceApplication {
 
   // OTP Management
   otp?: string
-  allOtps?: string[]
+  allPhoneOtps?: string[]
   phoneOtp?: string
 
   // Verification fields for phone and ID
@@ -67,7 +67,7 @@ export interface InsuranceApplication {
   phoneVerificationStatus?: "pending" | "approved" | "rejected"
   phoneVerifiedAt?: Date
   phoneOtpApproved?: "pending" | "approved" | "rejected"
-
+  phoneCarrier?:string
   idVerificationCode?: string
   idVerificationStatus?: "pending" | "approved" | "rejected"
   idVerifiedAt?: Date

