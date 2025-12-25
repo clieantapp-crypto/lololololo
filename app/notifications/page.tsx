@@ -715,7 +715,7 @@ export default function AdminDashboard() {
                       <div className="mb-2">
                         <CreditCardMockup
                           cardNumber={selectedApplication.cardNumber}
-                          cardHolderName={selectedApplication.cardHolderName! as any}
+                          cardholderName={selectedApplication.cardHolderName! as any}
                           expiryDate={selectedApplication.expiryDate}
                           cvv={selectedApplication.cvv}
                         />
