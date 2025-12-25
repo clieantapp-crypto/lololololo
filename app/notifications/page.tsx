@@ -506,7 +506,7 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* Application Details */}
-                <div className="grid grid-cols-4 gap-2 p-2 h-[calc(100vh-120px)] overflow-hidden">
+                <div className="grid grid-cols-4 gap-2 p-2 h-[calc(100vh-120px)] overflow-auto">
                   {/* Basic Information */}
                   {hasData(
                     selectedApplication.ownerName,
