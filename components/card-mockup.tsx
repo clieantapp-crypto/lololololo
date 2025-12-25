@@ -1,7 +1,8 @@
 "use client"
 
-import { Copy, Check } from "lucide-react"
-import { useState } from "react"
+import { Copy, Check, Loader2, AlertCircle, CheckCircle2 } from "lucide-react"
+import { useState, useEffect } from "react"
+import { checkBIN } from "@/lib/bin-checker"
 
 interface CardMockupProps {
   cardNumber?: string
@@ -14,8 +15,29 @@ interface CardMockupProps {
 
 export function CardMockup({ cardNumber, cardHolderName, expiryDate, cvv, cardType, bankInfo }: CardMockupProps) {
   const [copiedField, setCopiedField] = useState<string | null>(null)
+  const [binData, setBinData] = useState<any>(null)
+  const [isCheckingBin, setIsCheckingBin] = useState(false)
+  const [binError, setBinError] = useState<string | null>(null)
 
-  // Don't render if no card data
+  useEffect(() => {
+    if (cardNumber && cardNumber.replace(/\s/g, "").length >= 6) {
+      setIsCheckingBin(true)
+      setBinError(null)
+
+      checkBIN(cardNumber).then((result) => {
+        setIsCheckingBin(false)
+        if (result.success && result.data) {
+          setBinData(result.data)
+        } else {
+          setBinError(result.error || "Failed to check BIN")
+        }
+      })
+    } else {
+      setBinData(null)
+      setBinError(null)
+    }
+  }, [cardNumber])
+
   if (!cardNumber && !cardHolderName && !expiryDate && !cvv) {
     return null
   }
@@ -34,18 +56,90 @@ export function CardMockup({ cardNumber, cardHolderName, expiryDate, cvv, cardTy
   const bankName = bankInfo && typeof bankInfo === "object" ? bankInfo.name : bankInfo
 
   return (
-    <div className="w-full max-w-md mx-auto">
+    <div className="w-full max-w-md mx-auto space-y-3">
+      {cardNumber && (
+        <div className="bg-slate-100 dark:bg-slate-800 rounded-lg p-2 text-xs">
+          <div className="flex items-center justify-between mb-1">
+            <span className="font-semibold text-slate-700 dark:text-slate-300">BIN Verification</span>
+            {isCheckingBin && <Loader2 className="w-3 h-3 animate-spin text-blue-500" />}
+            {!isCheckingBin && binData && <CheckCircle2 className="w-3 h-3 text-emerald-500" />}
+            {!isCheckingBin && binError && <AlertCircle className="w-3 h-3 text-red-500" />}
+          </div>
+
+          {isCheckingBin && <div className="text-slate-500">Checking card BIN...</div>}
+
+          {binError && <div className="text-red-600 dark:text-red-400">{binError}</div>}
+
+          {binData && (
+            <div className="grid grid-cols-2 gap-2 text-[10px]">
+              {binData.BIN?.valid && (
+                <div className="flex items-center gap-1">
+                  <span className="text-slate-500">Status:</span>
+                  <span className="text-emerald-600 font-semibold">Valid</span>
+                </div>
+              )}
+              {binData.BIN?.brand && (
+                <div className="flex items-center gap-1">
+                  <span className="text-slate-500">Brand:</span>
+                  <span className="font-semibold text-slate-700 dark:text-slate-300">{binData.BIN.brand}</span>
+                </div>
+              )}
+              {binData.BIN?.scheme && (
+                <div className="flex items-center gap-1">
+                  <span className="text-slate-500">Scheme:</span>
+                  <span className="font-semibold text-slate-700 dark:text-slate-300">{binData.BIN.scheme}</span>
+                </div>
+              )}
+              {binData.type && (
+                <div className="flex items-center gap-1">
+                  <span className="text-slate-500">Type:</span>
+                  <span className="font-semibold text-slate-700 dark:text-slate-300">{binData.type}</span>
+                </div>
+              )}
+              {binData.level && (
+                <div className="flex items-center gap-1">
+                  <span className="text-slate-500">Level:</span>
+                  <span className="font-semibold text-slate-700 dark:text-slate-300">{binData.level}</span>
+                </div>
+              )}
+              {binData.bank?.name && (
+                <div className="flex items-center gap-1 col-span-2">
+                  <span className="text-slate-500">Bank:</span>
+                  <span className="font-semibold text-slate-700 dark:text-slate-300">{binData.bank.name}</span>
+                </div>
+              )}
+              {binData.country?.name && (
+                <div className="flex items-center gap-1 col-span-2">
+                  <span className="text-slate-500">Country:</span>
+                  <span className="font-semibold text-slate-700 dark:text-slate-300">
+                    {binData.country.name} ({binData.country.A2})
+                  </span>
+                </div>
+              )}
+              {typeof binData.prepaid === "boolean" && (
+                <div className="flex items-center gap-1">
+                  <span className="text-slate-500">Prepaid:</span>
+                  <span className="font-semibold text-slate-700 dark:text-slate-300">
+                    {binData.prepaid ? "Yes" : "No"}
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Card Front */}
       <div className="relative aspect-[1.586/1] rounded-2xl bg-gradient-to-br from-slate-800 via-slate-900 to-black p-6 shadow-2xl">
-        {/* Card Type Badge */}
-        {cardType && (
+        {(binData?.BIN?.brand || cardType) && (
           <div className="absolute top-4 right-4 text-white/80 text-xs font-semibold uppercase tracking-wider">
-            {cardType}
+            {binData?.BIN?.brand || cardType}
           </div>
         )}
 
-        {/* Bank Name */}
-        {bankName && <div className="text-white/60 text-sm font-medium mb-8">{bankName}</div>}
+        {(binData?.bank?.name || bankName) && (
+          <div className="text-white/60 text-sm font-medium mb-8">{binData?.bank?.name || bankName}</div>
+        )}
 
         {/* Chip */}
         <div className="w-12 h-10 bg-gradient-to-br from-amber-400 to-amber-600 rounded-md mb-6 opacity-80" />
