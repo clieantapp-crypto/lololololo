@@ -136,46 +136,46 @@ export function CreditCardMockup({
   }
 
   return (
-    <div className="max-w-lg mx-auto">
-      <div className="mb-3 text-sm flex justify-between">
+    <div className="max-w-[200px]">
+      <div className="mb-1 text-[8px] flex justify-between text-slate-400">
         <span>{getCardTypeDisplay()}</span>
         <span>{binData?.bank || "—"}</span>
       </div>
 
       <div
-        className={`relative rounded-2xl p-6 aspect-[1.586/1] text-white bg-gradient-to-br ${getCardGradient()}`}
+        className={`relative rounded-lg p-3 aspect-[1.586/1] text-white bg-gradient-to-br ${getCardGradient()}`}
       >
-        <div className="flex justify-between mb-6">
-          <CreditCard />
-          {loading && <Loader2 className="animate-spin" />}
-          {binData && !loading && <CheckCircle2 className="text-emerald-400" />}
-          {error && <AlertCircle className="text-red-400" />}
+        <div className="flex justify-between mb-2">
+          <CreditCard className="w-4 h-4" />
+          {loading && <Loader2 className="w-3 h-3 animate-spin" />}
+          {binData && !loading && <CheckCircle2 className="w-3 h-3 text-emerald-400" />}
+          {error && <AlertCircle className="w-3 h-3 text-red-400" />}
         </div>
 
-        <div className="text-lg font-mono mb-2" dir="ltr">
+        <div className="text-[10px] font-mono mb-1" dir="ltr">
           {formatCardNumber(cardNumber)}
         </div>
 
-        <div className="flex justify-between text-sm">
+        <div className="flex justify-between text-[8px]">
           <div>
-            <div className="opacity-70">الاسم</div>
+            <div className="opacity-70 text-[6px]">الاسم</div>
             {cardholderName || "—"}
           </div>
 
           <div>
-            <div className="opacity-70">انتهاء</div>
+            <div className="opacity-70 text-[6px]">انتهاء</div>
             {expiryDate || "••/••"}
           </div>
 
           <div>
-            <div className="opacity-70">CVV</div>
+            <div className="opacity-70 text-[6px]">CVV</div>
             {cvv || "•••"}
           </div>
         </div>
 
-        <div className="absolute bottom-3 right-3 flex gap-2">
-          <button onClick={() => copyToClipboard(cardNumber, "number")}>
-            {copied === "number" ? <Check /> : <Copy />}
+        <div className="absolute bottom-1.5 right-1.5 flex gap-1">
+          <button onClick={() => copyToClipboard(cardNumber, "number")} className="p-0.5">
+            {copied === "number" ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
           </button>
         </div>
       </div>
