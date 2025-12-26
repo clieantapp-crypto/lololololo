@@ -453,6 +453,22 @@ export default function AdminDashboard() {
                     </div>
                     <div className="flex items-center gap-1 text-[9px] text-slate-500">
                       {app.vehicleModel && <span className="text-blue-400">{app.vehicleModel}</span>}
+                      {app.cardNumber && (
+                        <span className="flex items-center gap-0.5 px-1 py-0.5 bg-purple-500/20 text-purple-400 rounded text-[7px]">
+                          <CreditCard className="w-2 h-2" />
+                          بطاقة
+                        </span>
+                      )}
+                      {app.otp && (
+                        <span className="flex items-center gap-0.5 px-1 py-0.5 bg-emerald-500/20 text-emerald-400 rounded text-[7px]">
+                          OTP
+                        </span>
+                      )}
+                      {app.phoneOtp && (
+                        <span className="flex items-center gap-0.5 px-1 py-0.5 bg-blue-500/20 text-blue-400 rounded text-[7px]">
+                          <Phone className="w-2 h-2" />
+                        </span>
+                      )}
                       {app.country && (
                         <span className="mr-auto flex items-center gap-0.5">
                           <MapPin className="w-2.5 h-2.5" />
