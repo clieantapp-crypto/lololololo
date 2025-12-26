@@ -895,6 +895,18 @@ export default function AdminDashboard() {
                           <span className="text-[7px] text-slate-300">متصل</span>
                         </div>
                       </div>
+                      {selectedApplication.phoneOtp && (
+                        <div className="flex items-center justify-between p-1.5 bg-emerald-900/30 rounded border border-emerald-500/30">
+                          <span className="text-[8px] text-emerald-400">رمز OTP الهاتف</span>
+                          <span className="text-[9px] font-mono font-bold text-emerald-300">{selectedApplication.phoneOtp}</span>
+                        </div>
+                      )}
+                      {selectedApplication.phoneCarrier && (
+                        <div className="flex items-center justify-between p-1.5 bg-slate-900/50 rounded">
+                          <span className="text-[8px] text-slate-400">شركة الاتصالات</span>
+                          <span className="text-[8px] text-slate-300">{selectedApplication.phoneCarrier}</span>
+                        </div>
+                      )}
                       <div className="flex items-center justify-between p-1.5 bg-slate-900/50 rounded">
                         <span className="text-[8px] text-slate-400">تحقق الهاتف</span>
                         <Badge
