@@ -5,6 +5,7 @@ export interface InsuranceApplication {
   // Step 1: Basic Information
   identityNumber: string;
   ownerName: string;
+  offerTotalPrice?: string;
   phoneNumber: string;
   phoneNumber2?: string;
   documentType: "استمارة" | "بطاقة جمركية";
@@ -117,3 +118,4 @@ export interface User {
   role: "customer" | "professional" | "admin" | "pays";
   createdAt: Date;
 }
+
