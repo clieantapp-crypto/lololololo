@@ -709,7 +709,7 @@ export default function AdminDashboard() {
                       />
                       <DataRow
                         label="السعر"
-                        value={`${selectedApplication.selectedOffer.price} ر.س`}
+                        value={`${selectedApplication?.offerTotalPrice} ر.س`}
                         onCopy={copyToClipboard}
                         copied={copiedField!}
                       />
